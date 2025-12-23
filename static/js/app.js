@@ -1392,6 +1392,9 @@ function updateLanguage() {
             }, 0);
 
             document.getElementById('powderFormContainer').style.display = 'block';
+            // 리스트 화면 숨기기
+            const layoutDiv = document.querySelector('.admin-powder-layout');
+            if (layoutDiv) layoutDiv.style.display = 'none';
         }
 
         function toggleParticleInputs() {
@@ -1453,6 +1456,9 @@ function updateLanguage() {
         function hidePowderForm() {
             document.getElementById('powderFormContainer').style.display = 'none';
             document.getElementById('powderForm').reset();
+            // 리스트 화면 다시 보이기
+            const layoutDiv = document.querySelector('.admin-powder-layout');
+            if (layoutDiv) layoutDiv.style.display = 'flex';
         }
 
         async function editPowderSpec(specId) {
@@ -1547,6 +1553,9 @@ function updateLanguage() {
                         }
 
                         document.getElementById('powderFormContainer').style.display = 'block';
+                        // 리스트 화면 숨기기
+                        const layoutDiv = document.querySelector('.admin-powder-layout');
+                        if (layoutDiv) layoutDiv.style.display = 'none';
                     }
                 }
             } catch (error) {
