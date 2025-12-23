@@ -134,6 +134,9 @@ function updateLanguage() {
             // mode: 'incoming' or 'mixing'
             powderSpecMode = mode;
 
+            // 폼이 열려있으면 닫기
+            hidePowderForm();
+
             // 탭 버튼 처리 (active 토글)
             document.getElementById('adminTabIncoming').classList.remove('active');
             document.getElementById('adminTabMixing').classList.remove('active');
@@ -1128,12 +1131,22 @@ function updateLanguage() {
                         item.className = 'powder-item';
                         item.dataset.specId = spec.id;
                         item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">` +
-                            `<div><strong>${spec.powder_name}</strong></div>` +
+                            `<div style="flex: 1; cursor: pointer;" class="powder-name-text"><strong>${spec.powder_name}</strong></div>` +
+                            `<input type="checkbox" class="powder-checkbox" data-spec-id="${spec.id}" style="cursor: pointer; margin-left: 8px;">` +
                             `</div>`;
 
-                        item.addEventListener('click', () => {
+                        // 분말명 클릭 시
+                        const nameText = item.querySelector('.powder-name-text');
+                        nameText.addEventListener('click', () => {
                             document.querySelectorAll('.vertical-list .powder-item').forEach(el => el.classList.remove('active'));
                             item.classList.add('active');
+                            showPowderSpecDetail(spec.id);
+                        });
+
+                        // 체크박스 클릭 시
+                        const checkbox = item.querySelector('.powder-checkbox');
+                        checkbox.addEventListener('click', (e) => {
+                            e.stopPropagation();
                             showPowderSpecDetail(spec.id);
                         });
 
