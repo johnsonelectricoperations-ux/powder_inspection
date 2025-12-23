@@ -793,11 +793,11 @@
 
                 <!-- 분말 관리: 좌측 리스트 + 우측 세부사양 -->
                 <div class="admin-powder-layout" style="display: flex; gap: 14px; align-items: flex-start;">
-                    <div class="powder-list-column">
+                    <div class="powder-list-column" style="width: 500px; min-width: 500px; flex-shrink: 0;">
                         <button class="btn secondary" style="width:100%; margin-bottom:10px; padding:8px 12px; font-size:0.9em;" onclick="showAddPowderForm()">+ 새분말추가</button>
                         <div id="powderNamesList" class="vertical-list"></div>
                     </div>
-                    <div class="powder-spec-column">
+                    <div class="powder-spec-column" style="flex: 1; min-width: 300px;">
                         <div id="powderSpecHeader"></div>
                         <div id="powderSpecDetail" style="margin-top:0;">
                             <div class="empty-message">왼쪽에서 분말명을 선택하세요</div>
