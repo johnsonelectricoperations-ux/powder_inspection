@@ -1128,7 +1128,7 @@ function updateLanguage() {
                         item.className = 'powder-item';
                         item.dataset.specId = spec.id;
                         item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">` +
-                            `<div><strong>${spec.powder_name}</strong><div style="font-size:0.85em;color:#666;">${spec.category === 'incoming' ? t('incoming') : t('mixing')}</div></div>` +
+                            `<div><strong>${spec.powder_name}</strong></div>` +
                             `</div>`;
 
                         item.addEventListener('click', () => {
@@ -1170,39 +1170,77 @@ function updateLanguage() {
 
                 selectedPowderSpecId = spec.id;
 
-                const activeItems = [];
-                if (spec.flow_rate_type !== '비활성' && (spec.flow_rate_min || spec.flow_rate_max)) activeItems.push(t('flowRate') + `: ${spec.flow_rate_min || '-'}~${spec.flow_rate_max || '-'}`);
-                if (spec.apparent_density_type !== '비활성' && (spec.apparent_density_min || spec.apparent_density_max)) activeItems.push(t('apparentDensity'));
-                if (spec.c_content_type !== '비활성' && (spec.c_content_min || spec.c_content_max)) activeItems.push(t('cContent'));
-                if (spec.cu_content_type !== '비활성' && (spec.cu_content_min || spec.cu_content_max)) activeItems.push(t('cuContent'));
-                if (spec.moisture_type !== '비활성' && (spec.moisture_min || spec.moisture_max)) activeItems.push(t('moisture'));
-                if (spec.ash_type !== '비활성' && (spec.ash_min || spec.ash_max)) activeItems.push(t('ash'));
-                if (spec.sinter_change_rate_type !== '비활성' && (spec.sinter_change_rate_min || spec.sinter_change_rate_max)) activeItems.push(t('sinterChangeRate'));
-                if (spec.sinter_strength_type !== '비활성' && (spec.sinter_strength_min || spec.sinter_strength_max)) activeItems.push(t('sinterStrength'));
-                if (spec.forming_strength_type !== '비활성' && (spec.forming_strength_min || spec.forming_strength_max)) activeItems.push(t('formingStrength'));
-                if (spec.forming_load_type !== '비활성' && (spec.forming_load_min || spec.forming_load_max)) activeItems.push(t('formingLoad'));
-                if (spec.particle_size_type !== '비활성') activeItems.push(t('particleSize'));
-
                 const detailDiv = document.getElementById('powderSpecDetail');
-                let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">`;
-                html += `<div style="padding:12px;background:#fafafa;border-radius:6px;">`;
-                html += `<h4 style="margin-top:0;">${spec.powder_name}</h4>`;
-                html += `<p style="color:#666;margin:6px 0;">${spec.category === 'incoming' ? t('incoming') : t('mixing')}</p>`;
-                html += `<p style="margin-top:8px;font-weight:600;">설정된 항목</p>`;
-                html += `<ul style="margin-top:8px;padding-left:16px;color:#444;">`;
-                if (activeItems.length > 0) activeItems.forEach(i => { html += `<li style="margin-bottom:6px;">${i}</li>`; });
-                else html += `<li>${t('noConfig')}</li>`;
-                html += `</ul></div>`;
 
-                html += `<div style="padding:12px;background:#fff;border-radius:6px;border:1px solid #f0f0f0;">`;
-                html += `<h4 style="margin-top:0;">세부 값</h4>`;
-                html += `<div style="font-size:0.95em;color:#333;">`;
-                html += `<p>Flow rate: ${spec.flow_rate_min || '-'} ~ ${spec.flow_rate_max || '-' } (${spec.flow_rate_type || '-'})</p>`;
-                html += `<p>Apparent density: ${spec.apparent_density_min || '-'} ~ ${spec.apparent_density_max || '-'} (${spec.apparent_density_type || '-'})</p>`;
-                html += `<p>C content: ${spec.c_content_min || '-'} ~ ${spec.c_content_max || '-'} (${spec.c_content_type || '-'})</p>`;
-                html += `<p>Cu content: ${spec.cu_content_min || '-'} ~ ${spec.cu_content_max || '-'} (${spec.cu_content_type || '-'})</p>`;
-                html += `</div></div>`;
+                let html = `<h3 style="margin-top:0; margin-bottom:16px; color:#333;">${spec.powder_name}</h3>`;
+                html += `<div style="overflow-x: auto;">`;
+                html += `<table style="width: 100%; min-width: 600px; border-collapse: collapse;">`;
+                html += `<thead>`;
+                html += `<tr style="background: #f5f5f5;">`;
+                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">검사항목</th>`;
+                html += `<th style="width: 10%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">단위</th>`;
+                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">최소값</th>`;
+                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">최대값</th>`;
+                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">검사타입</th>`;
+                html += `</tr>`;
+                html += `</thead>`;
+                html += `<tbody>`;
+
+                // 각 검사항목을 행으로 추가
+                const items = [
+                    { name: '유동도', unit: 's/50g', min: spec.flow_rate_min, max: spec.flow_rate_max, type: spec.flow_rate_type },
+                    { name: '겉보기밀도', unit: 'g/cm³', min: spec.apparent_density_min, max: spec.apparent_density_max, type: spec.apparent_density_type },
+                    { name: 'C함량', unit: '%', min: spec.c_content_min, max: spec.c_content_max, type: spec.c_content_type },
+                    { name: 'Cu함량', unit: '%', min: spec.cu_content_min, max: spec.cu_content_max, type: spec.cu_content_type },
+                    { name: '수분도', unit: '%', min: spec.moisture_min, max: spec.moisture_max, type: spec.moisture_type },
+                    { name: '회분도', unit: '%', min: spec.ash_min, max: spec.ash_max, type: spec.ash_type },
+                    { name: '소결변화율', unit: '%', min: spec.sinter_change_rate_min, max: spec.sinter_change_rate_max, type: spec.sinter_change_rate_type },
+                    { name: '소결강도', unit: 'MPa', min: spec.sinter_strength_min, max: spec.sinter_strength_max, type: spec.sinter_strength_type },
+                    { name: '성형강도', unit: 'N', min: spec.forming_strength_min, max: spec.forming_strength_max, type: spec.forming_strength_type },
+                    { name: '성형하중', unit: 'MPa', min: spec.forming_load_min, max: spec.forming_load_max, type: spec.forming_load_type },
+                    { name: '입도분석', unit: '', min: '', max: '', type: spec.particle_size_type }
+                ];
+
+                items.forEach(item => {
+                    const isInactive = item.type === '비활성' || !item.type;
+                    const rowStyle = isInactive ? 'opacity: 0.5;' : '';
+                    html += `<tr style="${rowStyle}">`;
+                    html += `<td style="padding: 8px; border: 1px solid #ddd;"><strong>${item.name}</strong></td>`;
+                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.unit}</td>`;
+                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.min || '-'}</td>`;
+                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.max || '-'}</td>`;
+                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.type || '비활성'}</td>`;
+                    html += `</tr>`;
+                });
+
+                html += `</tbody>`;
+                html += `</table>`;
                 html += `</div>`;
+
+                // 입도분석 상세 정보 (활성화된 경우)
+                if (spec.particle_size_type && spec.particle_size_type !== '비활성') {
+                    html += `<div style="margin-top: 20px; padding: 15px; background: #f0f4f8; border-radius: 6px;">`;
+                    html += `<h4 style="margin-top: 0; color: #667eea;">📊 입도분석 상세</h4>`;
+                    html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">`;
+
+                    const particles = [
+                        { label: '+180 um', min: spec.particle_180_min, max: spec.particle_180_max },
+                        { label: '+150 um', min: spec.particle_150_min, max: spec.particle_150_max },
+                        { label: '+106 um', min: spec.particle_106_min, max: spec.particle_106_max },
+                        { label: '+75 um', min: spec.particle_75_min, max: spec.particle_75_max },
+                        { label: '+45 um', min: spec.particle_45_min, max: spec.particle_45_max },
+                        { label: '-45 um', min: spec.particle_45m_min, max: spec.particle_45m_max }
+                    ];
+
+                    particles.forEach(p => {
+                        html += `<div style="padding: 10px; background: white; border-radius: 4px;">`;
+                        html += `<strong>${p.label}</strong>: ${p.min || '-'} ~ ${p.max || '-'} %`;
+                        html += `</div>`;
+                    });
+
+                    html += `</div>`;
+                    html += `</div>`;
+                }
 
                 detailDiv.innerHTML = html;
 
