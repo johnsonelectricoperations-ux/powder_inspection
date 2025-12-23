@@ -1353,8 +1353,8 @@ function updateLanguage() {
             });
 
             try {
-                const response = await fetch(`${API_BASE}/api/admin/powder-spec`, {
-                    method: 'POST',
+                const response = await fetch(`${API_BASE}/api/admin/powder-spec/${specId}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
