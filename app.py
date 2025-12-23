@@ -2288,24 +2288,42 @@ def get_completed_lots(powder_name):
 def validate_material_lot(lot_number):
     """원재료 LOT 검증 (수입검사 완료 여부 확인)"""
     try:
+        # 쿼리 파라미터로 분말명 받기
+        powder_name = request.args.get('powder_name', '')
+
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            # 수입검사 결과에서 LOT 조회
-            cursor.execute('''
-                SELECT powder_name, lot_number, final_result, inspection_time
-                FROM inspection_result
-                WHERE lot_number = ? AND category = 'incoming'
-            ''', (lot_number,))
+            # 수입검사 결과에서 LOT와 분말명으로 조회
+            if powder_name:
+                cursor.execute('''
+                    SELECT powder_name, lot_number, final_result, inspection_time
+                    FROM inspection_result
+                    WHERE lot_number = ? AND powder_name = ? AND category = 'incoming'
+                ''', (lot_number, powder_name))
+            else:
+                # 하위 호환성: 분말명이 없으면 LOT만으로 검색 (기존 방식)
+                cursor.execute('''
+                    SELECT powder_name, lot_number, final_result, inspection_time
+                    FROM inspection_result
+                    WHERE lot_number = ? AND category = 'incoming'
+                ''', (lot_number,))
 
             row = cursor.fetchone()
 
             if not row:
-                return jsonify({
-                    'success': False,
-                    'valid': False,
-                    'message': f'LOT {lot_number}는 수입검사 기록이 없습니다.'
-                })
+                if powder_name:
+                    return jsonify({
+                        'success': False,
+                        'valid': False,
+                        'message': f'LOT {lot_number}의 {powder_name} 수입검사 기록이 없습니다.'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'valid': False,
+                        'message': f'LOT {lot_number}는 수입검사 기록이 없습니다.'
+                    })
 
             result = dict_from_row(row)
 

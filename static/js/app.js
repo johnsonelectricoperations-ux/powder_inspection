@@ -3337,7 +3337,7 @@ function updateLanguage() {
             // validate each selected lot independently (if provided)
             try {
                 if (lotNumber) {
-                    const response = await fetch(`${API_BASE}/api/blending/validate-lot/${encodeURIComponent(lotNumber)}`);
+                    const response = await fetch(`${API_BASE}/api/blending/validate-lot/${encodeURIComponent(lotNumber)}?powder_name=${encodeURIComponent(expectedPowder)}`);
                     const data = await response.json();
 
                     if (data.success && data.valid) {
