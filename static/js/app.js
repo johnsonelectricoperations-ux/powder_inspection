@@ -1131,33 +1131,32 @@ function updateLanguage() {
                         item.className = 'powder-item';
                         item.dataset.specId = spec.id;
                         item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">` +
-                            `<div style="flex: 1; cursor: pointer;" class="powder-name-text"><strong>${spec.powder_name}</strong></div>` +
+                            `<div style="flex: 1;" class="powder-name-text"><strong>${spec.powder_name}</strong></div>` +
                             `<input type="checkbox" class="powder-checkbox" data-spec-id="${spec.id}" style="cursor: pointer; margin-left: 8px;">` +
                             `</div>`;
 
-                        // 분말명 클릭 시
-                        const nameText = item.querySelector('.powder-name-text');
-                        nameText.addEventListener('click', () => {
-                            document.querySelectorAll('.vertical-list .powder-item').forEach(el => el.classList.remove('active'));
-                            item.classList.add('active');
-                            showPowderSpecDetail(spec.id);
-                        });
-
-                        // 체크박스 클릭 시
+                        // 체크박스 클릭 시만 우측 화면 변경
                         const checkbox = item.querySelector('.powder-checkbox');
-                        checkbox.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            showPowderSpecDetail(spec.id);
+                        checkbox.addEventListener('change', (e) => {
+                            // 다른 모든 체크박스 해제
+                            document.querySelectorAll('.powder-checkbox').forEach(cb => {
+                                if (cb !== checkbox) cb.checked = false;
+                            });
+
+                            // 체크된 경우에만 우측 화면 표시
+                            if (checkbox.checked) {
+                                showPowderSpecDetail(spec.id);
+                            }
                         });
 
                         namesDiv.appendChild(item);
                     });
 
-                    // 자동 선택
-                    const first = namesDiv.querySelector('.powder-item');
-                    if (first) {
-                        first.classList.add('active');
-                        const firstId = first.dataset.specId;
+                    // 자동 선택: 첫 번째 체크박스 체크
+                    const firstCheckbox = namesDiv.querySelector('.powder-checkbox');
+                    if (firstCheckbox) {
+                        firstCheckbox.checked = true;
+                        const firstId = firstCheckbox.dataset.specId;
                         showPowderSpecDetail(parseInt(firstId));
                     }
                 } else {
