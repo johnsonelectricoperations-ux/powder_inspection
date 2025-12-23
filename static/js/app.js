@@ -3566,8 +3566,9 @@ function updateLanguage() {
                 labelDiv.innerHTML = infoHtml;
                 list.appendChild(labelDiv);
 
-                // 바코드 내용: 간단한 파이프 구분 문자열
-                const barcodeValue = `PN:${product}|LOT:${batchLot}|DATE:${dateStr}|COMP:${company}|PACK:${i}/${totalPacks}|WT:${packWeight}kg`;
+                // 바코드 내용: 영문/숫자만 사용 (CODE128은 한글 미지원)
+                // LOT 번호를 주 식별자로 사용
+                const barcodeValue = `${batchLot}-${i}/${totalPacks}`;
 
                 // render barcode into svg (DOM 렌더링 후 실행)
                 setTimeout(() => {
@@ -3577,11 +3578,14 @@ function updateLanguage() {
                             JsBarcode(svgEl, barcodeValue, {
                                 format: 'CODE128',
                                 width: 2,
-                                height: 72,
+                                height: 60,
                                 displayValue: true,
-                                fontSize: 12,
-                                margin: 0
+                                fontSize: 14,
+                                margin: 2,
+                                marginTop: 5,
+                                marginBottom: 5
                             });
+                            console.log('바코드 생성 성공:', barcodeValue);
                         } else {
                             console.error('JsBarcode를 찾을 수 없거나 SVG 요소가 없습니다.', svgEl);
                             if (svgEl) {
