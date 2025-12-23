@@ -1185,14 +1185,14 @@ function updateLanguage() {
                 `;
 
                 let html = `<div style="overflow-x: auto;">`;
-                html += `<table id="specTable" style="width: 100%; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
+                html += `<table id="specTable" style="width: 100%; border-collapse: collapse; font-size: 1em; table-layout: fixed;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
                 html += `<thead>`;
                 html += `<tr style="background: #f8f9fa;">`;
-                html += `<th style="width: 28%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
-                html += `<th style="width: 13%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">단위</th>`;
-                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최소값</th>`;
-                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최대값</th>`;
-                html += `<th style="width: 23%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사타입</th>`;
+                html += `<th style="width: 22%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">검사항목</th>`;
+                html += `<th style="width: 15%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">단위</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">최소값</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">최대값</th>`;
+                html += `<th style="width: 27%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">검사타입</th>`;
                 html += `</tr>`;
                 html += `</thead>`;
                 html += `<tbody>`;
@@ -1216,11 +1216,11 @@ function updateLanguage() {
                     const isInactive = item.type === '비활성' || !item.type;
                     const rowStyle = isInactive ? 'opacity: 0.45;' : '';
                     html += `<tr data-field="${item.field}" style="${rowStyle}">`;
-                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
-                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.unit}</td>`;
-                    html += `<td class="editable-min" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.min || ''}">${item.min || '-'}</td>`;
-                    html += `<td class="editable-max" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.max || ''}">${item.max || '-'}</td>`;
-                    html += `<td class="editable-type" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.type || '비활성'}">${item.type || '비활성'}</td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; white-space: nowrap;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;">${item.unit}</td>`;
+                    html += `<td class="editable-min" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.min || ''}">${item.min || '-'}</td>`;
+                    html += `<td class="editable-max" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.max || ''}">${item.max || '-'}</td>`;
+                    html += `<td class="editable-type" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.type || '비활성'}">${item.type || '비활성'}</td>`;
                     html += `</tr>`;
                 });
 
