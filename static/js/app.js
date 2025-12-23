@@ -2086,7 +2086,7 @@ function updateLanguage() {
                         const totalRatio = product.recipes.reduce((sum, r) => sum + parseFloat(r.ratio || 0), 0);
 
                         html += `
-                            <div class="card" style="margin-bottom: 15px; border-left: 4px solid #667eea;">
+                            <div class="card product-card" data-product-name="${product.product_name}" style="margin-bottom: 15px; border-left: 4px solid #667eea;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <div>
                                         <h3 style="margin: 0;">${product.product_name}</h3>
@@ -2200,8 +2200,17 @@ function updateLanguage() {
                     }
                 }
 
+                // 폼을 해당 제품 card 바로 아래로 이동
+                const formContainer = document.getElementById('productFormContainer');
+                const productCard = document.querySelector(`.product-card[data-product-name="${productName}"]`);
+
+                if (productCard && formContainer) {
+                    // 폼을 productCard 바로 다음에 삽입
+                    productCard.insertAdjacentElement('afterend', formContainer);
+                }
+
                 // 폼 표시
-                document.getElementById('productFormContainer').style.display = 'block';
+                formContainer.style.display = 'block';
 
             } catch (error) {
                 alert('오류: ' + error.message);
