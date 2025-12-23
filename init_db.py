@@ -413,13 +413,13 @@ def init_database():
     # 유동도만 '일상', 나머지는 모두 '정기'
     # 수입검사용 분말 3개 (원료)
     powder_specs = [
-        ('순철분말', 25, 35, '일상', 2.5, 3.0, '정기', 0.5, 0.8, '정기', None, None, '비활성', 0, 0.5, '정기', 0, 1.0, '정기', 5, 8, '정기', 850, 950, '정기', 120, 150, '정기', 180, 220, '정기', '정기', 'incoming'),
-        ('구리분말', 20, 30, '일상', 2.0, 2.8, '정기', 0.4, 0.7, '정기', 1.0, 2.0, '정기', 0, 0.3, '정기', 0, 0.8, '정기', 4, 7, '정기', 800, 900, '정기', 100, 140, '정기', 160, 200, '정기', '정기', 'incoming'),
-        ('흑연분말', 30, 40, '일상', 3.0, 3.5, '정기', 0.6, 0.9, '정기', 2.0, 3.0, '정기', 0, 0.4, '정기', 0, 1.2, '정기', 6, 9, '정기', 900, 1000, '정기', 130, 160, '정기', 200, 240, '정기', '정기', 'incoming'),
+        ('Pure-Iron-Powder', 25, 35, '일상', 2.5, 3.0, '정기', 0.5, 0.8, '정기', None, None, '비활성', 0, 0.5, '정기', 0, 1.0, '정기', 5, 8, '정기', 850, 950, '정기', 120, 150, '정기', 180, 220, '정기', '정기', 'incoming'),
+        ('Copper-Powder', 20, 30, '일상', 2.0, 2.8, '정기', 0.4, 0.7, '정기', 1.0, 2.0, '정기', 0, 0.3, '정기', 0, 0.8, '정기', 4, 7, '정기', 800, 900, '정기', 100, 140, '정기', 160, 200, '정기', '정기', 'incoming'),
+        ('Graphite-Powder', 30, 40, '일상', 3.0, 3.5, '정기', 0.6, 0.9, '정기', 2.0, 3.0, '정기', 0, 0.4, '정기', 0, 1.2, '정기', 6, 9, '정기', 900, 1000, '정기', 130, 160, '정기', 200, 240, '정기', '정기', 'incoming'),
         # 배합검사용 분말 3개 (완제품)
-        ('표준배합철분', 28, 36, '일상', 2.7, 3.2, '정기', 0.5, 0.85, '정기', 0.6, 1.2, '정기', 0, 0.4, '정기', 0, 0.9, '정기', 5.5, 8.5, '정기', 870, 970, '정기', 125, 155, '정기', 185, 225, '정기', '정기', 'mixing'),
-        ('고강도배합분말', 26, 34, '일상', 2.8, 3.3, '정기', 0.55, 0.88, '정기', 0.4, 1.0, '정기', 0, 0.35, '정기', 0, 0.85, '정기', 6, 9, '정기', 900, 980, '정기', 130, 160, '정기', 190, 230, '정기', '정기', 'mixing'),
-        ('경량배합분말', 30, 38, '일상', 2.4, 2.9, '정기', 0.6, 0.95, '정기', 0.6, 1.4, '정기', 0, 0.45, '정기', 0, 1.0, '정기', 5, 8, '정기', 850, 950, '정기', 120, 150, '정기', 180, 220, '정기', '정기', 'mixing')
+        ('Standard-Iron-Mix', 28, 36, '일상', 2.7, 3.2, '정기', 0.5, 0.85, '정기', 0.6, 1.2, '정기', 0, 0.4, '정기', 0, 0.9, '정기', 5.5, 8.5, '정기', 870, 970, '정기', 125, 155, '정기', 185, 225, '정기', '정기', 'mixing'),
+        ('High-Strength-Mix', 26, 34, '일상', 2.8, 3.3, '정기', 0.55, 0.88, '정기', 0.4, 1.0, '정기', 0, 0.35, '정기', 0, 0.85, '정기', 6, 9, '정기', 900, 980, '정기', 130, 160, '정기', 190, 230, '정기', '정기', 'mixing'),
+        ('Lightweight-Mix', 30, 38, '일상', 2.4, 2.9, '정기', 0.6, 0.95, '정기', 0.6, 1.4, '정기', 0, 0.45, '정기', 0, 1.0, '정기', 5, 8, '정기', 850, 950, '정기', 120, 150, '정기', 180, 220, '정기', '정기', 'mixing')
     ]
 
     cursor.executemany('''
@@ -442,24 +442,24 @@ def init_database():
 
     # 입도분석 규격 샘플 데이터 (수입검사용 분말에 대해서만)
     particle_specs = [
-        ('순철분말', '+180 um', 5.0, 10.0),
-        ('순철분말', '+150 um', 10.0, 15.0),
-        ('순철분말', '+106 um', 15.0, 20.0),
-        ('순철분말', '+75 um', 20.0, 25.0),
-        ('순철분말', '+45 um', 15.0, 20.0),
-        ('순철분말', '-45 um', 10.0, 15.0),
-        ('구리분말', '+180 um', 3.0, 8.0),
-        ('구리분말', '+150 um', 8.0, 12.0),
-        ('구리분말', '+106 um', 12.0, 18.0),
-        ('구리분말', '+75 um', 18.0, 23.0),
-        ('구리분말', '+45 um', 12.0, 18.0),
-        ('구리분말', '-45 um', 8.0, 12.0),
-        ('흑연분말', '+180 um', 4.0, 9.0),
-        ('흑연분말', '+150 um', 9.0, 14.0),
-        ('흑연분말', '+106 um', 14.0, 19.0),
-        ('흑연분말', '+75 um', 19.0, 24.0),
-        ('흑연분말', '+45 um', 14.0, 19.0),
-        ('흑연분말', '-45 um', 9.0, 14.0)
+        ('Pure-Iron-Powder', '+180 um', 5.0, 10.0),
+        ('Pure-Iron-Powder', '+150 um', 10.0, 15.0),
+        ('Pure-Iron-Powder', '+106 um', 15.0, 20.0),
+        ('Pure-Iron-Powder', '+75 um', 20.0, 25.0),
+        ('Pure-Iron-Powder', '+45 um', 15.0, 20.0),
+        ('Pure-Iron-Powder', '-45 um', 10.0, 15.0),
+        ('Copper-Powder', '+180 um', 3.0, 8.0),
+        ('Copper-Powder', '+150 um', 8.0, 12.0),
+        ('Copper-Powder', '+106 um', 12.0, 18.0),
+        ('Copper-Powder', '+75 um', 18.0, 23.0),
+        ('Copper-Powder', '+45 um', 12.0, 18.0),
+        ('Copper-Powder', '-45 um', 8.0, 12.0),
+        ('Graphite-Powder', '+180 um', 4.0, 9.0),
+        ('Graphite-Powder', '+150 um', 9.0, 14.0),
+        ('Graphite-Powder', '+106 um', 14.0, 19.0),
+        ('Graphite-Powder', '+75 um', 19.0, 24.0),
+        ('Graphite-Powder', '+45 um', 14.0, 19.0),
+        ('Graphite-Powder', '-45 um', 9.0, 14.0)
     ]
 
     cursor.executemany('''
@@ -477,18 +477,18 @@ def init_database():
 
     # Recipe 샘플 데이터 (3개 제품, 각각 수입검사용 분말 조합)
     sample_recipes = [
-        # 표준배합철분 = 순철 60% + 구리 30% + 흑연 10%
-        ('표준배합철분', 'STD-001', '순철분말', 'incoming', 60.0, None, 0.5, 1, '시스템'),  # Main
-        ('표준배합철분', 'STD-001', '구리분말', 'incoming', 30.0, None, 0.5, 0, '시스템'),
-        ('표준배합철분', 'STD-001', '흑연분말', 'incoming', 10.0, None, 0.5, 0, '시스템'),
-        # 고강도배합분말 = 순철 70% + 구리 20% + 흑연 10%
-        ('고강도배합분말', 'HIGH-002', '순철분말', 'incoming', 70.0, None, 0.3, 1, '시스템'),  # Main
-        ('고강도배합분말', 'HIGH-002', '구리분말', 'incoming', 20.0, None, 0.3, 0, '시스템'),
-        ('고강도배합분말', 'HIGH-002', '흑연분말', 'incoming', 10.0, None, 0.3, 0, '시스템'),
-        # 경량배합분말 = 순철 50% + 구리 30% + 흑연 20%
-        ('경량배합분말', 'LIGHT-003', '순철분말', 'incoming', 50.0, None, 0.8, 1, '시스템'),  # Main
-        ('경량배합분말', 'LIGHT-003', '구리분말', 'incoming', 30.0, None, 0.8, 0, '시스템'),
-        ('경량배합분말', 'LIGHT-003', '흑연분말', 'incoming', 20.0, None, 0.8, 0, '시스템'),
+        # Standard-Iron-Mix = Pure Iron 60% + Copper 30% + Graphite 10%
+        ('Standard-Iron-Mix', 'STD-001', 'Pure-Iron-Powder', 'incoming', 60.0, None, 0.5, 1, '시스템'),  # Main
+        ('Standard-Iron-Mix', 'STD-001', 'Copper-Powder', 'incoming', 30.0, None, 0.5, 0, '시스템'),
+        ('Standard-Iron-Mix', 'STD-001', 'Graphite-Powder', 'incoming', 10.0, None, 0.5, 0, '시스템'),
+        # High-Strength-Mix = Pure Iron 70% + Copper 20% + Graphite 10%
+        ('High-Strength-Mix', 'HIGH-002', 'Pure-Iron-Powder', 'incoming', 70.0, None, 0.3, 1, '시스템'),  # Main
+        ('High-Strength-Mix', 'HIGH-002', 'Copper-Powder', 'incoming', 20.0, None, 0.3, 0, '시스템'),
+        ('High-Strength-Mix', 'HIGH-002', 'Graphite-Powder', 'incoming', 10.0, None, 0.3, 0, '시스템'),
+        # Lightweight-Mix = Pure Iron 50% + Copper 30% + Graphite 20%
+        ('Lightweight-Mix', 'LIGHT-003', 'Pure-Iron-Powder', 'incoming', 50.0, None, 0.8, 1, '시스템'),  # Main
+        ('Lightweight-Mix', 'LIGHT-003', 'Copper-Powder', 'incoming', 30.0, None, 0.8, 0, '시스템'),
+        ('Lightweight-Mix', 'LIGHT-003', 'Graphite-Powder', 'incoming', 20.0, None, 0.8, 0, '시스템'),
     ]
 
     cursor.executemany('''
@@ -513,13 +513,18 @@ def init_database():
     # 각 분말별 2개 LOT 검사 데이터 생성
     lot_counter = 1
     inspection_count = 0
-    
-    for powder_info in [('순철분말', 'incoming'), ('구리분말', 'incoming'), ('흑연분말', 'incoming')]:
-        powder_name, category = powder_info
-        
+
+    # powder_info: (powder_name, category, lot_prefix)
+    for powder_info in [
+        ('Pure-Iron-Powder', 'incoming', 'PI'),
+        ('Copper-Powder', 'incoming', 'CU'),
+        ('Graphite-Powder', 'incoming', 'GR')
+    ]:
+        powder_name, category, lot_prefix = powder_info
+
         # 각 분말마다 2개 LOT 생성
         for lot_idx in range(2):
-            lot_number = f"LOT-{powder_name[:2]}-2024-{lot_counter:03d}"
+            lot_number = f"LOT-{lot_prefix}-2024-{lot_counter:03d}"
             lot_counter += 1
             
             inspection_time = base_date + timedelta(days=lot_idx, hours=lot_idx*2)

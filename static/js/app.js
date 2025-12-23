@@ -3567,8 +3567,8 @@ function updateLanguage() {
                 list.appendChild(labelDiv);
 
                 // 바코드 내용: 영문/숫자만 사용 (CODE128은 한글 미지원)
-                // LOT 번호를 주 식별자로 사용
-                const barcodeValue = `${batchLot}-${i}/${totalPacks}`;
+                // 분말명(영문), LOT 번호, Pack 정보를 모두 포함
+                const barcodeValue = `PN:${product}|LOT:${batchLot}|${i}/${totalPacks}`;
 
                 // render barcode into svg (DOM 렌더링 후 실행)
                 setTimeout(() => {
