@@ -51,31 +51,31 @@
             </div>
             <div class="nav-item" onclick="showPage('incoming')" data-page="incoming">
                 <span class="nav-item-icon">📦</span>
-                <span data-i18n="navIncoming">수입검사</span>
+                <span data-i18n="navIncoming">수입분말 검사</span>
             </div>
             <div class="nav-item" onclick="showPage('blending-orders')" data-page="blending-orders">
                 <span class="nav-item-icon">📄</span>
-                <span data-i18n="navBlendingOrders">배합작업지시서</span>
+                <span data-i18n="navBlendingOrders">배합작업계획 등록</span>
             </div>
             <div class="nav-item" onclick="showPage('blending')" data-page="blending">
                 <span class="nav-item-icon">⚗️</span>
                 <span data-i18n="navBlending">배합작업</span>
             </div>
-            <div class="nav-item" onclick="showPage('mixing')" data-page="mixing">
-                <span class="nav-item-icon">🔧</span>
-                <span data-i18n="navMixing">배합검사</span>
-            </div>
-            <div class="nav-item" onclick="showComingSoon('REWORK')" style="opacity: 0.6;">
-                <span class="nav-item-icon">🔄</span>
-                <span data-i18n="navRework">REWORK</span>
-            </div>
             <div class="nav-item" onclick="showPage('blending-log')" data-page="blending-log">
                 <span class="nav-item-icon">📋</span>
-                <span data-i18n="navBlendingLog">배합작업 조회</span>
+                <span data-i18n="navBlendingLog">배합작업 현황 조회</span>
+            </div>
+            <div class="nav-item" onclick="showPage('mixing')" data-page="mixing">
+                <span class="nav-item-icon">🔧</span>
+                <span data-i18n="navMixing">배합분말 검사</span>
             </div>
             <div class="nav-item" onclick="showPage('search')" data-page="search">
                 <span class="nav-item-icon">🔍</span>
                 <span data-i18n="navSearchResults">검사결과 조회</span>
+            </div>
+            <div class="nav-item" onclick="showComingSoon('REWORK')" style="opacity: 0.6;">
+                <span class="nav-item-icon">🔄</span>
+                <span data-i18n="navRework">REWORK</span>
             </div>
             <div class="nav-item" onclick="showPage('traceability')" data-page="traceability">
                 <span class="nav-item-icon">🔗</span>
@@ -301,8 +301,10 @@
                     <label style="margin-left: 12px;">작업완료일</label>
                     <input type="date" id="filterCompletedDate" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
 
-                    <label style="margin-left: 12px;">제품명</label>
-                    <input type="text" id="filterProductName" placeholder="제품명" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <label style="margin-left: 12px;">배합분말명</label>
+                    <select id="filterProductName" style="padding:8px; border:1px solid #ddd; border-radius:4px; min-width: 150px;">
+                        <option value="">전체</option>
+                    </select>
 
                     <label style="margin-left: 12px;">배합 LOT</label>
                     <input type="text" id="filterBatchLot" placeholder="배합 LOT 번호" style="padding:8px; border:1px solid #ddd; border-radius:4px;">

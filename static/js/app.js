@@ -102,6 +102,7 @@ function updateLanguage() {
             } else if (pageName === 'search') {
                 loadPowderListForSearch();
             } else if (pageName === 'blending-log') {
+                loadMixingPowderListForFilter();
                 loadBlendingWorks();
             } else if (pageName === 'blending-orders') {
                 loadBlendingOrdersPage();
@@ -3683,6 +3684,37 @@ function updateLanguage() {
         // ============================================
         // 배합작업 조회 (Blending Work Log)
         // ============================================
+
+        async function loadMixingPowderListForFilter() {
+            // 배합작업 현황 조회 필터용 배합분말 목록 로드
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/powder-spec?category=mixing`);
+                const data = await response.json();
+
+                const select = document.getElementById('filterProductName');
+                if (!select) return;
+
+                // 기존 옵션 유지하고 분말 목록 추가
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">전체</option>';
+
+                if (data.success && data.specs) {
+                    data.specs.forEach(spec => {
+                        const option = document.createElement('option');
+                        option.value = spec.powder_name;
+                        option.textContent = spec.powder_name;
+                        select.appendChild(option);
+                    });
+                }
+
+                // 이전 선택값 복원
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            } catch (error) {
+                console.error('배합분말 목록 로딩 실패:', error);
+            }
+        }
 
         async function loadBlendingWorks() {
             try {
