@@ -4335,7 +4335,7 @@ function updateLanguage() {
                 // 목표중량 설정 (select에 없으면 임시 option 추가)
                 const targetSelect = document.getElementById('blendingTargetWeight');
                 if (targetSelect) {
-                    const val = order.total_target_weight;
+                    const val = order.total_target_weight || 5000; // 기본값 5000kg
                     let optExists = false;
                     for (let opt of targetSelect.options) {
                         if (String(opt.value) === String(val)) { optExists = true; break; }
