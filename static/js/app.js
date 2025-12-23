@@ -1171,10 +1171,21 @@ function updateLanguage() {
                 selectedPowderSpecId = spec.id;
 
                 const detailDiv = document.getElementById('powderSpecDetail');
+                const headerDiv = document.getElementById('powderSpecHeader');
 
-                let html = `<h3 style="margin-top:0; margin-bottom:16px; color:#333; font-size:1.3em;">${spec.powder_name}</h3>`;
-                html += `<div style="overflow-x: auto;">`;
-                html += `<table style="width: 100%; border-collapse: collapse; font-size: 1em;">`;
+                // 헤더: 분말명(왼쪽) + 수정/삭제 버튼(오른쪽)
+                headerDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; color: #333; font-size: 1.3em;">${spec.powder_name}</h3>
+                        <div>
+                            <button class="btn secondary" id="specEditBtn" style="margin-right:6px; padding:5px 12px; font-size:0.85em;">수정</button>
+                            <button class="btn danger" id="specDeleteBtn" style="padding:5px 12px; font-size:0.85em;">삭제</button>
+                        </div>
+                    </div>
+                `;
+
+                let html = `<div style="overflow-x: auto;">`;
+                html += `<table id="specTable" style="width: 100%; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}">`;
                 html += `<thead>`;
                 html += `<tr style="background: #f8f9fa;">`;
                 html += `<th style="width: 22%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
@@ -1188,28 +1199,28 @@ function updateLanguage() {
 
                 // 각 검사항목을 행으로 추가
                 const items = [
-                    { name: '유동도', unit: 's/50g', min: spec.flow_rate_min, max: spec.flow_rate_max, type: spec.flow_rate_type },
-                    { name: '겉보기밀도', unit: 'g/cm³', min: spec.apparent_density_min, max: spec.apparent_density_max, type: spec.apparent_density_type },
-                    { name: 'C함량', unit: '%', min: spec.c_content_min, max: spec.c_content_max, type: spec.c_content_type },
-                    { name: 'Cu함량', unit: '%', min: spec.cu_content_min, max: spec.cu_content_max, type: spec.cu_content_type },
-                    { name: '수분도', unit: '%', min: spec.moisture_min, max: spec.moisture_max, type: spec.moisture_type },
-                    { name: '회분도', unit: '%', min: spec.ash_min, max: spec.ash_max, type: spec.ash_type },
-                    { name: '소결변화율', unit: '%', min: spec.sinter_change_rate_min, max: spec.sinter_change_rate_max, type: spec.sinter_change_rate_type },
-                    { name: '소결강도', unit: 'MPa', min: spec.sinter_strength_min, max: spec.sinter_strength_max, type: spec.sinter_strength_type },
-                    { name: '성형강도', unit: 'N', min: spec.forming_strength_min, max: spec.forming_strength_max, type: spec.forming_strength_type },
-                    { name: '성형하중', unit: 'MPa', min: spec.forming_load_min, max: spec.forming_load_max, type: spec.forming_load_type },
-                    { name: '입도분석', unit: '', min: '', max: '', type: spec.particle_size_type }
+                    { name: '유동도', field: 'flow_rate', unit: 's/50g', min: spec.flow_rate_min, max: spec.flow_rate_max, type: spec.flow_rate_type },
+                    { name: '겉보기밀도', field: 'apparent_density', unit: 'g/cm³', min: spec.apparent_density_min, max: spec.apparent_density_max, type: spec.apparent_density_type },
+                    { name: 'C함량', field: 'c_content', unit: '%', min: spec.c_content_min, max: spec.c_content_max, type: spec.c_content_type },
+                    { name: 'Cu함량', field: 'cu_content', unit: '%', min: spec.cu_content_min, max: spec.cu_content_max, type: spec.cu_content_type },
+                    { name: '수분도', field: 'moisture', unit: '%', min: spec.moisture_min, max: spec.moisture_max, type: spec.moisture_type },
+                    { name: '회분도', field: 'ash', unit: '%', min: spec.ash_min, max: spec.ash_max, type: spec.ash_type },
+                    { name: '소결변화율', field: 'sinter_change_rate', unit: '%', min: spec.sinter_change_rate_min, max: spec.sinter_change_rate_max, type: spec.sinter_change_rate_type },
+                    { name: '소결강도', field: 'sinter_strength', unit: 'MPa', min: spec.sinter_strength_min, max: spec.sinter_strength_max, type: spec.sinter_strength_type },
+                    { name: '성형강도', field: 'forming_strength', unit: 'N', min: spec.forming_strength_min, max: spec.forming_strength_max, type: spec.forming_strength_type },
+                    { name: '성형하중', field: 'forming_load', unit: 'MPa', min: spec.forming_load_min, max: spec.forming_load_max, type: spec.forming_load_type },
+                    { name: '입도분석', field: 'particle_size', unit: '', min: '', max: '', type: spec.particle_size_type }
                 ];
 
                 items.forEach(item => {
                     const isInactive = item.type === '비활성' || !item.type;
                     const rowStyle = isInactive ? 'opacity: 0.45;' : '';
-                    html += `<tr style="${rowStyle}">`;
+                    html += `<tr data-field="${item.field}" style="${rowStyle}">`;
                     html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
                     html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.unit}</td>`;
-                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.min || '-'}</td>`;
-                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.max || '-'}</td>`;
-                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.type || '비활성'}</td>`;
+                    html += `<td class="editable-min" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.min || ''}">${item.min || '-'}</td>`;
+                    html += `<td class="editable-max" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.max || ''}">${item.max || '-'}</td>`;
+                    html += `<td class="editable-type" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;" data-value="${item.type || '비활성'}">${item.type || '비활성'}</td>`;
                     html += `</tr>`;
                 });
 
@@ -1246,11 +1257,101 @@ function updateLanguage() {
 
                 const editBtn = document.getElementById('specEditBtn');
                 const delBtn = document.getElementById('specDeleteBtn');
-                if (editBtn) editBtn.onclick = () => editPowderSpec(spec.id);
+                if (editBtn) editBtn.onclick = () => toggleInlineEdit();
                 if (delBtn) delBtn.onclick = () => deletePowderSpec(spec.id, spec.powder_name);
 
             } catch (error) {
                 console.error('사양 상세 로딩 실패:', error);
+            }
+        }
+
+        // 인라인 편집 모드 전역 변수
+        let isInlineEditMode = false;
+
+        function toggleInlineEdit() {
+            const editBtn = document.getElementById('specEditBtn');
+            if (!isInlineEditMode) {
+                enableInlineEdit();
+                editBtn.textContent = '저장';
+                editBtn.classList.remove('secondary');
+                editBtn.classList.add('primary');
+                isInlineEditMode = true;
+            } else {
+                saveInlineEdit();
+            }
+        }
+
+        function enableInlineEdit() {
+            const table = document.getElementById('specTable');
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const minCell = row.querySelector('.editable-min');
+                const maxCell = row.querySelector('.editable-max');
+                const typeCell = row.querySelector('.editable-type');
+
+                if (minCell) {
+                    const minValue = minCell.dataset.value;
+                    minCell.innerHTML = `<input type="number" step="0.01" value="${minValue}" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (maxCell) {
+                    const maxValue = maxCell.dataset.value;
+                    maxCell.innerHTML = `<input type="number" step="0.01" value="${maxValue}" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (typeCell) {
+                    const typeValue = typeCell.dataset.value;
+                    typeCell.innerHTML = `
+                        <select style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px;">
+                            <option value="일상" ${typeValue === '일상' ? 'selected' : ''}>일상</option>
+                            <option value="정기" ${typeValue === '정기' ? 'selected' : ''}>정기</option>
+                            <option value="비활성" ${typeValue === '비활성' ? 'selected' : ''}>비활성</option>
+                        </select>
+                    `;
+                }
+            });
+        }
+
+        async function saveInlineEdit() {
+            const table = document.getElementById('specTable');
+            if (!table) return;
+
+            const specId = table.dataset.specId;
+            const rows = table.querySelectorAll('tbody tr');
+            const data = { id: specId };
+
+            rows.forEach(row => {
+                const field = row.dataset.field;
+                const minCell = row.querySelector('.editable-min input');
+                const maxCell = row.querySelector('.editable-max input');
+                const typeCell = row.querySelector('.editable-type select');
+
+                if (minCell) data[`${field}_min`] = minCell.value || null;
+                if (maxCell) data[`${field}_max`] = maxCell.value || null;
+                if (typeCell) data[`${field}_type`] = typeCell.value;
+            });
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/powder-spec`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('저장되었습니다.');
+                    isInlineEditMode = false;
+                    // 다시 로드
+                    showPowderSpecDetail(parseInt(specId));
+                } else {
+                    alert('저장 실패: ' + (result.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장 중 오류가 발생했습니다.');
             }
         }
 

@@ -591,8 +591,10 @@ table tbody tr:hover {
     background: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 16px;
+    padding: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
 }
 
 .vertical-list {
@@ -605,22 +607,26 @@ table tbody tr:hover {
 }
 
 .vertical-list .powder-item {
-    padding: 9px 11px;
-    border-radius: 5px;
+    padding: 10px 12px;
+    border-radius: 4px;
     cursor: pointer;
-    margin-bottom: 5px;
-    border: 1px solid transparent;
+    margin-bottom: 4px;
+    border: 1px solid #e8e8e8;
     font-size: 0.95em;
+    background: #fafafa;
+    transition: all 0.2s ease;
 }
 
 .vertical-list .powder-item:hover {
-    background: #f5f7fa;
+    background: #e3f2fd;
+    border-color: #90caf9;
 }
 
 .vertical-list .powder-item.active {
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: #1976d2;
     color: white;
-    border-color: rgba(0,0,0,0.06);
+    border-color: #1565c0;
+    font-weight: 600;
 }
 
 .spec-header {
