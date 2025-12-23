@@ -3569,17 +3569,29 @@ function updateLanguage() {
                 // 바코드 내용: 간단한 파이프 구분 문자열
                 const barcodeValue = `PN:${product}|LOT:${batchLot}|DATE:${dateStr}|COMP:${company}|PACK:${i}/${totalPacks}|WT:${packWeight}kg`;
 
-                // render barcode into svg
-                try {
-                    const svgEl = labelDiv.querySelector(`#label-barcode-${i}`);
-                    if (svgEl && typeof JsBarcode === 'function') {
-                        JsBarcode(svgEl, barcodeValue, { format: 'CODE128', width: 2, height: 72, displayValue: true, fontSize: 12, margin: 0 });
-                    } else if (svgEl) {
-                        svgEl.innerHTML = `<text x="0" y="20">${barcodeValue}</text>`;
+                // render barcode into svg (DOM 렌더링 후 실행)
+                setTimeout(() => {
+                    try {
+                        const svgEl = document.getElementById(`label-barcode-${i}`);
+                        if (svgEl && typeof JsBarcode === 'function') {
+                            JsBarcode(svgEl, barcodeValue, {
+                                format: 'CODE128',
+                                width: 2,
+                                height: 72,
+                                displayValue: true,
+                                fontSize: 12,
+                                margin: 0
+                            });
+                        } else {
+                            console.error('JsBarcode를 찾을 수 없거나 SVG 요소가 없습니다.', svgEl);
+                            if (svgEl) {
+                                svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="10">${barcodeValue}</text>`;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('바코드 렌더링 오류:', err);
                     }
-                } catch (err) {
-                    console.error('바코드 렌더링 오류:', err);
-                }
+                }, 100);
             }
 
             // show panel
