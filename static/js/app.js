@@ -3601,6 +3601,10 @@ function updateLanguage() {
             const labelEl = list && list.children && list.children[index - 1];
             if (!labelEl) return alert('라벨을 찾을 수 없습니다.');
 
+            // 바코드 SVG 요소와 데이터 가져오기
+            const barcodeSvg = labelEl.querySelector('svg[id^="label-barcode-"]');
+            const barcodeId = barcodeSvg ? barcodeSvg.id : null;
+
             const content = labelEl.innerHTML;
             const w = window.open('', '_blank');
             if (!w) return alert('팝업 차단을 확인하세요.');
@@ -3610,6 +3614,7 @@ function updateLanguage() {
                 <head>
                     <meta charset="utf-8">
                     <title>라벨 인쇄</title>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <style>
                         body { margin:0; padding:0; }
                         .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
@@ -3618,7 +3623,26 @@ function updateLanguage() {
                 <body>
                     <div class="label">${content}</div>
                     <script>
-                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 300); };
+                        window.onload = function() {
+                            // 바코드 재렌더링
+                            const svgEl = document.querySelector('svg[id^="label-barcode-"]');
+                            if (svgEl && typeof JsBarcode === 'function') {
+                                // SVG에서 원래 바코드 값 추출 (text 요소에서)
+                                const textEl = svgEl.querySelector('text');
+                                if (textEl && textEl.textContent) {
+                                    const barcodeValue = textEl.textContent;
+                                    JsBarcode(svgEl, barcodeValue, {
+                                        format: 'CODE128',
+                                        width: 2,
+                                        height: 72,
+                                        displayValue: true,
+                                        fontSize: 12,
+                                        margin: 0
+                                    });
+                                }
+                            }
+                            setTimeout(function(){ window.print(); window.close(); }, 500);
+                        };
                     <\/script>
                 </body>
                 </html>
