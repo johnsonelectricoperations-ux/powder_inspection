@@ -1172,16 +1172,16 @@ function updateLanguage() {
 
                 const detailDiv = document.getElementById('powderSpecDetail');
 
-                let html = `<h3 style="margin-top:0; margin-bottom:16px; color:#333;">${spec.powder_name}</h3>`;
+                let html = `<h4 style="margin-top:0; margin-bottom:12px; color:#444; font-size:1.15em;">${spec.powder_name}</h4>`;
                 html += `<div style="overflow-x: auto;">`;
-                html += `<table style="width: 100%; min-width: 600px; border-collapse: collapse;">`;
+                html += `<table style="width: 100%; border-collapse: collapse; font-size: 0.92em;">`;
                 html += `<thead>`;
-                html += `<tr style="background: #f5f5f5;">`;
-                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">검사항목</th>`;
-                html += `<th style="width: 10%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">단위</th>`;
-                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">최소값</th>`;
-                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">최대값</th>`;
-                html += `<th style="width: 20%; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: 600;">검사타입</th>`;
+                html += `<tr style="background: #f8f9fa;">`;
+                html += `<th style="width: 22%; padding: 7px 10px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">검사항목</th>`;
+                html += `<th style="width: 12%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">단위</th>`;
+                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">최소값</th>`;
+                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">최대값</th>`;
+                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">검사타입</th>`;
                 html += `</tr>`;
                 html += `</thead>`;
                 html += `<tbody>`;
@@ -1203,13 +1203,13 @@ function updateLanguage() {
 
                 items.forEach(item => {
                     const isInactive = item.type === '비활성' || !item.type;
-                    const rowStyle = isInactive ? 'opacity: 0.5;' : '';
+                    const rowStyle = isInactive ? 'opacity: 0.45;' : '';
                     html += `<tr style="${rowStyle}">`;
-                    html += `<td style="padding: 8px; border: 1px solid #ddd;"><strong>${item.name}</strong></td>`;
-                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.unit}</td>`;
-                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.min || '-'}</td>`;
-                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.max || '-'}</td>`;
-                    html += `<td style="padding: 8px; border: 1px solid #ddd;">${item.type || '비활성'}</td>`;
+                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
+                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.unit}</td>`;
+                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.min || '-'}</td>`;
+                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.max || '-'}</td>`;
+                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.type || '비활성'}</td>`;
                     html += `</tr>`;
                 });
 
@@ -1219,9 +1219,9 @@ function updateLanguage() {
 
                 // 입도분석 상세 정보 (활성화된 경우)
                 if (spec.particle_size_type && spec.particle_size_type !== '비활성') {
-                    html += `<div style="margin-top: 20px; padding: 15px; background: #f0f4f8; border-radius: 6px;">`;
-                    html += `<h4 style="margin-top: 0; color: #667eea;">📊 입도분석 상세</h4>`;
-                    html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">`;
+                    html += `<div style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
+                    html += `<h5 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.95em; font-weight: 600;">📊 입도분석 상세</h5>`;
+                    html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
 
                     const particles = [
                         { label: '+180 um', min: spec.particle_180_min, max: spec.particle_180_max },
@@ -1233,8 +1233,8 @@ function updateLanguage() {
                     ];
 
                     particles.forEach(p => {
-                        html += `<div style="padding: 10px; background: white; border-radius: 4px;">`;
-                        html += `<strong>${p.label}</strong>: ${p.min || '-'} ~ ${p.max || '-'} %`;
+                        html += `<div style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
+                        html += `<strong style="font-weight: 600;">${p.label}</strong>: ${p.min || '-'} ~ ${p.max || '-'} %`;
                         html += `</div>`;
                     });
 
