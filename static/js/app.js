@@ -1185,7 +1185,7 @@ function updateLanguage() {
                 `;
 
                 let html = `<div style="overflow-x: auto;">`;
-                html += `<table id="specTable" style="min-width: 3000px; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}">`;
+                html += `<table id="specTable" style="min-width: 3000px; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
                 html += `<thead>`;
                 html += `<tr style="background: #f8f9fa;">`;
                 html += `<th style="width: 750px; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
@@ -1319,8 +1319,15 @@ function updateLanguage() {
             if (!table) return;
 
             const specId = table.dataset.specId;
+            const powderName = table.dataset.powderName;
+            const category = table.dataset.category;
             const rows = table.querySelectorAll('tbody tr');
-            const data = { id: specId };
+
+            const data = {
+                id: specId,
+                powder_name: powderName,
+                category: category
+            };
 
             rows.forEach(row => {
                 const field = row.dataset.field;
