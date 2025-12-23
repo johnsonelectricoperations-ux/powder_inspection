@@ -1185,14 +1185,14 @@ function updateLanguage() {
                 `;
 
                 let html = `<div style="overflow-x: auto;">`;
-                html += `<table id="specTable" style="min-width: 3000px; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
+                html += `<table id="specTable" style="width: 100%; border-collapse: collapse; font-size: 1em;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
                 html += `<thead>`;
                 html += `<tr style="background: #f8f9fa;">`;
-                html += `<th style="width: 750px; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
-                html += `<th style="width: 450px; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">단위</th>`;
-                html += `<th style="width: 600px; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최소값</th>`;
-                html += `<th style="width: 600px; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최대값</th>`;
-                html += `<th style="width: 600px; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사타입</th>`;
+                html += `<th style="width: 28%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
+                html += `<th style="width: 13%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">단위</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최소값</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최대값</th>`;
+                html += `<th style="width: 23%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사타입</th>`;
                 html += `</tr>`;
                 html += `</thead>`;
                 html += `<tbody>`;
