@@ -1172,16 +1172,16 @@ function updateLanguage() {
 
                 const detailDiv = document.getElementById('powderSpecDetail');
 
-                let html = `<h4 style="margin-top:0; margin-bottom:12px; color:#444; font-size:1.15em;">${spec.powder_name}</h4>`;
+                let html = `<h3 style="margin-top:0; margin-bottom:16px; color:#333; font-size:1.3em;">${spec.powder_name}</h3>`;
                 html += `<div style="overflow-x: auto;">`;
-                html += `<table style="width: 100%; border-collapse: collapse; font-size: 0.92em;">`;
+                html += `<table style="width: 100%; border-collapse: collapse; font-size: 1em;">`;
                 html += `<thead>`;
                 html += `<tr style="background: #f8f9fa;">`;
-                html += `<th style="width: 22%; padding: 7px 10px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">검사항목</th>`;
-                html += `<th style="width: 12%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">단위</th>`;
-                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">최소값</th>`;
-                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">최대값</th>`;
-                html += `<th style="width: 18%; padding: 7px 10px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 0.95em; color: #555;">검사타입</th>`;
+                html += `<th style="width: 22%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사항목</th>`;
+                html += `<th style="width: 12%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">단위</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최소값</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">최대값</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444;">검사타입</th>`;
                 html += `</tr>`;
                 html += `</thead>`;
                 html += `<tbody>`;
@@ -1205,11 +1205,11 @@ function updateLanguage() {
                     const isInactive = item.type === '비활성' || !item.type;
                     const rowStyle = isInactive ? 'opacity: 0.45;' : '';
                     html += `<tr style="${rowStyle}">`;
-                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
-                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.unit}</td>`;
-                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.min || '-'}</td>`;
-                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.max || '-'}</td>`;
-                    html += `<td style="padding: 6px 10px; border: 1px solid #e8e8e8; text-align: center;">${item.type || '비활성'}</td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.unit}</td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.min || '-'}</td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.max || '-'}</td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center;">${item.type || '비활성'}</td>`;
                     html += `</tr>`;
                 });
 
