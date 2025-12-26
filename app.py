@@ -456,6 +456,49 @@ def delete_incomplete_inspection(powder_name, lot_number):
         return jsonify({'success': False, 'message': str(e)})
 
 # ============================================
+# API: 검사자 업데이트
+# ============================================
+
+@app.route('/api/update-inspector', methods=['PUT'])
+def update_inspector():
+    """검사 진행 중 검사자 변경"""
+    try:
+        data = request.get_json()
+        powder_name = data.get('powderName')
+        lot_number = data.get('lotNumber')
+        inspector = data.get('inspector')
+
+        if not all([powder_name, lot_number, inspector]):
+            return jsonify({'success': False, 'message': '필수 항목이 누락되었습니다.'})
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # inspection_progress 테이블 업데이트
+            cursor.execute('''
+                UPDATE inspection_progress
+                SET inspector = ?
+                WHERE powder_name = ? AND lot_number = ?
+            ''', (inspector, powder_name, lot_number))
+
+            # inspection_result 테이블도 업데이트 (이미 생성된 경우)
+            cursor.execute('''
+                UPDATE inspection_result
+                SET inspector = ?
+                WHERE powder_name = ? AND lot_number = ?
+            ''', (inspector, powder_name, lot_number))
+
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                return jsonify({'success': False, 'message': '검사를 찾을 수 없습니다.'})
+
+            return jsonify({'success': True, 'message': '검사자가 변경되었습니다.'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
 # API: 검사 항목 저장
 # ============================================
 

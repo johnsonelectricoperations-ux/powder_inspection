@@ -452,10 +452,16 @@ function updateLanguage() {
             }
         }
 
-        function showInspectionPage() {
+        async function showInspectionPage() {
             document.getElementById('infoPowderName').textContent = currentInspection.powderName;
             document.getElementById('infoLotNumber').textContent = currentInspection.lotNumber;
-            document.getElementById('infoInspector').textContent = currentInspection.inspector;
+
+            // 검사자 select 박스 설정
+            await loadInspectorListForInspection();
+            const inspectorSelect = document.getElementById('infoInspector');
+            if (inspectorSelect) {
+                inspectorSelect.value = currentInspection.inspector || '';
+            }
 
             const completed = currentInspection.completedItems || [];
             const total = currentInspection.totalItems || [];
@@ -463,6 +469,64 @@ function updateLanguage() {
 
             renderInspectionItems();
             showPage('inspection');
+        }
+
+        // 검사 진행 화면용 검사자 목록 로드
+        async function loadInspectorListForInspection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/inspectors`);
+                const data = await response.json();
+
+                const select = document.getElementById('infoInspector');
+                if (!select) return;
+
+                // 기존 옵션 유지하고 검사자 목록 추가
+                select.innerHTML = '<option value="">선택하세요</option>';
+
+                if (data.success && data.inspectors) {
+                    data.inspectors.forEach(inspector => {
+                        const option = document.createElement('option');
+                        option.value = inspector.name;
+                        option.textContent = inspector.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('검사자 목록 로딩 실패:', error);
+            }
+        }
+
+        // 검사자 변경
+        async function updateInspector() {
+            const newInspector = document.getElementById('infoInspector').value;
+
+            if (!newInspector) {
+                alert('검사자를 선택하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/update-inspector`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        powderName: currentInspection.powderName,
+                        lotNumber: currentInspection.lotNumber,
+                        inspector: newInspector
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentInspection.inspector = newInspector;
+                    alert('검사자가 변경되었습니다.');
+                } else {
+                    alert('검사자 변경 실패: ' + data.message);
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
         }
 
         function renderInspectionItems() {
