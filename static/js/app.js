@@ -9,9 +9,6 @@ let currentItems = [];
 // 임시 판정 결과 저장
 let pendingResults = {};
 
-// 다국어 지원
-let currentLang = localStorage.getItem('language') || 'ko';
-
 // 안전한 이벤트 리스너 추가 헬퍼 함수
 function safeAddEventListener(elementId, eventType, handler) {
     const element = document.getElementById(elementId);
@@ -22,48 +19,11 @@ function safeAddEventListener(elementId, eventType, handler) {
     return false;
 }
 
-// 번역 헬퍼 함수
-function t(key) {
-    return translations[currentLang][key] || key;
-}
-
-// 언어 전환 함수
-function toggleLanguage() {
-    currentLang = currentLang === 'ko' ? 'en' : 'ko';
-    localStorage.setItem('language', currentLang);
-    updateLanguage();
-}
-
-function updateLanguage() {
-    const t = translations[currentLang];
-
-    // data-i18n 속성을 가진 모든 요소 업데이트
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        if (t[key]) {
-            element.textContent = t[key];
-        }
-    });
-
-    // data-i18n-placeholder 속성을 가진 모든 요소 업데이트
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-        const key = element.getAttribute('data-i18n-placeholder');
-        if (t[key]) {
-            element.placeholder = t[key];
-        }
-    });
-
-    // 언어 버튼 텍스트 업데이트
-    document.getElementById('langText').textContent = currentLang === 'ko' ? 'English' : '한국어';
-}
-
         // ============================================
         // 준비중 메뉴 안내
         // ============================================
         function showComingSoon(menuName) {
-            const message = currentLang === 'ko'
-                ? `"${menuName}" 기능은 현재 개발 중입니다.\n\n향후 업데이트에서 제공될 예정입니다.`
-                : `"${menuName}" feature is currently under development.\n\nIt will be available in a future update.`;
+            const message = `"${menuName}" 기능은 현재 개발 중입니다.\n\n향후 업데이트에서 제공될 예정입니다.`;
             alert(message);
         }
 
@@ -3674,7 +3634,7 @@ function updateLanguage() {
                 // 날짜 (작업 완료시엔 서버의 end_time을 사용하거나 현재 시각 사용)
                 const dateStr = (work.end_time) ? new Date(work.end_time).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR');
 
-                const company = translations[currentLang].companyName || 'Johnson Electric Operations';
+                const company = 'Johnson Electric Operations';
                 const product = work.product_name || '';
                 const batchLot = work.batch_lot || '';
 
@@ -3683,7 +3643,7 @@ function updateLanguage() {
                         <!-- 상단: 회사명 (왼쪽 상단) 및 날짜(오른쪽 상단) -->
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                             <div style="font-weight:700; font-size:12px; text-align:left;">${company}</div>
-                            <div style="font-size:11px; color:#222; text-align:right;">${translations[currentLang].labelDate || '작업날짜'}: ${dateStr}</div>
+                            <div style="font-size:11px; color:#222; text-align:right;">작업날짜: ${dateStr}</div>
                         </div>
 
                         <!-- 중앙: 분말명 (크게) -->
@@ -3695,9 +3655,9 @@ function updateLanguage() {
                         <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
                             <svg id="label-barcode-${i}" style="width:100%; height:72px; display:block;"></svg>
                             <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
-                            <div style="font-size:12px; color:#222; font-weight:600;">${translations[currentLang].labelPack || 'Pack'}: ${i}/${totalPacks} • ${translations[currentLang].labelWeight || '중량'}: ${formatNumber(packWeight)} kg</div>
+                            <div style="font-size:12px; color:#222; font-weight:600;">Pack: ${i}/${totalPacks} • 중량: ${formatNumber(packWeight)} kg</div>
                             <div style="display:flex; gap:6px; justify-content:center; width:100%;">
-                                <button class="btn" onclick="printLabel(${i})">${translations[currentLang].printLabel || '인쇄'}</button>
+                                <button class="btn" onclick="printLabel(${i})">인쇄</button>
                             </div>
                         </div>
                     </div>
@@ -4570,11 +4530,6 @@ function updateLanguage() {
                 console.error(err);
                 alert('작업지시서 불러오기 중 오류가 발생했습니다.');
             }
-        }
-
-        // 번역 헬퍼 함수
-        function t(key) {
-            return translations[currentLang][key] || key;
         }
 
         // 숫자 포맷팅 함수 (천단위 콤마)
