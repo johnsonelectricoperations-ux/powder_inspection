@@ -2513,6 +2513,26 @@ function updateLanguage() {
 
                 data.works.forEach(work => {
                     const endTime = work.end_time ? new Date(work.end_time).toLocaleString('ko-KR') : '-';
+
+                    // 검사 상태에 따라 버튼/아이콘 표시
+                    let actionHtml = '';
+                    if (work.inspection_status === 'completed') {
+                        // 검사 완료된 경우
+                        if (work.inspection_result === 'pass') {
+                            actionHtml = '<span style="font-size:24px;color:#4CAF50;">✅</span> <span style="color:#4CAF50;font-weight:600;">합격</span>';
+                        } else if (work.inspection_result === 'fail') {
+                            actionHtml = '<span style="font-size:24px;color:#F44336;">❌</span> <span style="color:#F44336;font-weight:600;">불합격</span>';
+                        } else {
+                            actionHtml = '<span style="color:#666;">검사완료</span>';
+                        }
+                    } else if (work.inspection_status === 'in_progress') {
+                        // 검사 진행 중
+                        actionHtml = '<span style="color:#FFC107;">⏳ 검사중</span>';
+                    } else {
+                        // 검사 미시작
+                        actionHtml = `<button class="btn primary" onclick="startBlendingInspectionFromMixing('${work.batch_lot}', '${work.product_name}')" style="padding:6px 10px;">🔧 배합검사</button>`;
+                    }
+
                     html += `
                         <tr>
                             <td>${work.work_order || '-'}</td>
@@ -2520,9 +2540,7 @@ function updateLanguage() {
                             <td><strong>${work.batch_lot}</strong></td>
                             <td>${work.operator || '-'}</td>
                             <td>${endTime}</td>
-                            <td>
-                                <button class="btn primary" onclick="startBlendingInspectionFromMixing('${work.batch_lot}', '${work.product_name}')" style="padding:6px 10px;">배합검사</button>
-                            </td>
+                            <td>${actionHtml}</td>
                         </tr>
                     `;
                 });

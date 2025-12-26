@@ -1052,18 +1052,19 @@ def _do_save_to_result_table(powder_name, lot_number, item_name, values, average
         else:
             # 새 행 생성
             cursor.execute('''
-                SELECT inspection_type, inspector FROM inspection_progress
+                SELECT inspection_type, inspector, category FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
 
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
+            category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector)
-                VALUES (?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category))
 
             new_id = cursor.lastrowid
 
@@ -1275,18 +1276,19 @@ def _do_save_particle_to_result_table(powder_name, lot_number, particle_data, ov
             cursor.execute(query, update_values)
         else:
             cursor.execute('''
-                SELECT inspection_type, inspector FROM inspection_progress
+                SELECT inspection_type, inspector, category FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
 
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
+            category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector)
-                VALUES (?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category))
 
             new_id = cursor.lastrowid
             update_values.append(new_id)
@@ -2563,6 +2565,24 @@ def get_blending_works():
             works = []
             for row in cursor.fetchall():
                 work_dict = dict_from_row(row)
+
+                # 각 배합작업에 대한 검사 상태 조회
+                cursor.execute('''
+                    SELECT status, final_result
+                    FROM inspection_result
+                    WHERE lot_number = ? AND category = 'mixing'
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                ''', (work_dict['batch_lot'],))
+
+                inspection_row = cursor.fetchone()
+                if inspection_row:
+                    work_dict['inspection_status'] = inspection_row[0]
+                    work_dict['inspection_result'] = inspection_row[1]
+                else:
+                    work_dict['inspection_status'] = None
+                    work_dict['inspection_result'] = None
+
                 works.append(work_dict)
 
             return jsonify({'success': True, 'works': works})
