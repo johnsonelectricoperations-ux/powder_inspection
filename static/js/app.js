@@ -71,6 +71,12 @@ function updateLanguage() {
         // 페이지 전환
         // ============================================
         function showPage(pageName) {
+            // 관리자 모드 접근 시 비밀번호 확인
+            if (pageName === 'admin') {
+                verifyAdminPassword();
+                return;
+            }
+
             // 페이지 전환
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
@@ -106,9 +112,60 @@ function updateLanguage() {
                 loadBlendingWorks();
             } else if (pageName === 'blending-orders') {
                 loadBlendingOrdersPage();
-            } else if (pageName === 'admin') {
-                loadAdminPage();
             }
+        }
+
+        // ============================================
+        // 관리자 비밀번호 확인
+        // ============================================
+        async function verifyAdminPassword() {
+            const password = prompt('관리자 비밀번호를 입력하세요:');
+
+            if (password === null) {
+                // 사용자가 취소를 클릭
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/verify-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 비밀번호 확인 성공 - 관리자 페이지로 이동
+                    showAdminPageDirect();
+                } else {
+                    alert('비밀번호가 일치하지 않습니다.');
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        function showAdminPageDirect() {
+            // 비밀번호 확인 후 직접 관리자 페이지 표시
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById('admin').classList.add('active');
+
+            // 네비게이션 active 상태 업데이트
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeNav = document.querySelector(`.nav-item[data-page="admin"]`);
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+
+            // 관리자 페이지 로드
+            loadAdminPage();
         }
 
         // ============================================

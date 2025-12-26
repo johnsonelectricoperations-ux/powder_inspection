@@ -3044,6 +3044,52 @@ def get_blending_order_progress(order_id):
         return jsonify({'success': False, 'message': str(e)})
 
 # ============================================
+# 관리자 비밀번호 검증
+# ============================================
+
+@app.route('/api/admin/verify-password', methods=['POST'])
+def verify_admin_password():
+    """관리자 모드 비밀번호 검증"""
+    try:
+        import hashlib
+        import os
+
+        data = request.get_json()
+        input_password = data.get('password', '')
+
+        # 비밀번호 파일 경로
+        password_file = os.path.join(os.path.dirname(__file__), 'password.txt')
+
+        # 파일이 없으면 초기 비밀번호(1234) 생성
+        if not os.path.exists(password_file):
+            default_password = "1234"
+            hashed = hashlib.sha256(default_password.encode()).hexdigest()
+            with open(password_file, 'w') as f:
+                f.write(hashed)
+
+        # 저장된 해시 읽기
+        with open(password_file, 'r') as f:
+            stored_hash = f.read().strip()
+
+        # 입력된 비밀번호 해시화
+        input_hash = hashlib.sha256(input_password.encode()).hexdigest()
+
+        # 비교
+        if input_hash == stored_hash:
+            return jsonify({
+                'success': True,
+                'message': '비밀번호가 확인되었습니다.'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': '비밀번호가 일치하지 않습니다.'
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
 # 서버 실행
 # ============================================
 
