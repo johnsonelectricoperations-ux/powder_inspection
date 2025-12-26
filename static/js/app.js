@@ -2665,8 +2665,8 @@ function t(key) {
                             actionHtml = '<span style="color:#666;">검사완료</span>';
                         }
                     } else if (work.inspection_status === 'in_progress') {
-                        // 검사 진행 중
-                        actionHtml = '<span style="color:#FFC107;">⏳ 검사중</span>';
+                        // 검사 진행 중 - 이어하기 버튼 표시
+                        actionHtml = `<button class="btn" onclick="continueInspection('${work.product_name}', '${work.batch_lot}', 'mixing')" style="padding:6px 10px; background:#FFC107; color:#000;">⏳ 검사 이어하기</button>`;
                     } else {
                         // 검사 미시작
                         actionHtml = `<button class="btn primary" onclick="startBlendingInspectionFromMixing('${work.batch_lot}', '${work.product_name}')" style="padding:6px 10px;">🔧 배합검사</button>`;
