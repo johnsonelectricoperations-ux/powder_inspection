@@ -2619,20 +2619,32 @@ def get_blending_works():
 
                 # 각 배합작업에 대한 검사 상태 조회
                 cursor.execute('''
-                    SELECT status, final_result
+                    SELECT final_result
                     FROM inspection_result
                     WHERE lot_number = ? AND category = 'mixing'
-                    ORDER BY created_at DESC
+                    ORDER BY inspection_time DESC
                     LIMIT 1
                 ''', (work_dict['batch_lot'],))
 
                 inspection_row = cursor.fetchone()
                 if inspection_row:
-                    work_dict['inspection_status'] = inspection_row[0]
-                    work_dict['inspection_result'] = inspection_row[1]
+                    work_dict['inspection_status'] = 'completed'
+                    work_dict['inspection_result'] = inspection_row[0]
                 else:
-                    work_dict['inspection_status'] = None
-                    work_dict['inspection_result'] = None
+                    # 진행중인 검사가 있는지 확인
+                    cursor.execute('''
+                        SELECT 1
+                        FROM inspection_progress
+                        WHERE lot_number = ? AND category = 'mixing'
+                        LIMIT 1
+                    ''', (work_dict['batch_lot'],))
+
+                    if cursor.fetchone():
+                        work_dict['inspection_status'] = 'in_progress'
+                        work_dict['inspection_result'] = None
+                    else:
+                        work_dict['inspection_status'] = None
+                        work_dict['inspection_result'] = None
 
                 works.append(work_dict)
 
