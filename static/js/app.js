@@ -550,7 +550,7 @@ function t(key) {
         async function loadInspectorListForInspection() {
             try {
                 const response = await fetch(`${API_BASE}/api/inspector-list`);
-                const data = await response.json();
+                const result = await response.json();
 
                 const select = document.getElementById('infoInspector');
                 if (!select) return;
@@ -558,11 +558,11 @@ function t(key) {
                 // 기존 옵션 유지하고 검사자 목록 추가
                 select.innerHTML = '<option value="">선택하세요</option>';
 
-                if (data.success && data.inspectors) {
-                    data.inspectors.forEach(inspector => {
+                if (result.success && result.data) {
+                    result.data.forEach(inspectorName => {
                         const option = document.createElement('option');
-                        option.value = inspector.name;
-                        option.textContent = inspector.name;
+                        option.value = inspectorName;
+                        option.textContent = inspectorName;
                         select.appendChild(option);
                     });
                 }
