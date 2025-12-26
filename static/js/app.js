@@ -3857,20 +3857,15 @@ function updateLanguage() {
 
         async function loadBlendingWorks() {
             try {
-                // 배합작업조회 날짜 기본값 설정 (오늘 날짜)
-                const today = new Date().toISOString().split('T')[0];
-                const filterCompletedDateInput = document.getElementById('filterCompletedDate');
-                if (filterCompletedDateInput && !filterCompletedDateInput.value) {
-                    filterCompletedDateInput.value = today;
-                }
-                
                 const statusFilter = document.getElementById('blendingLogStatusFilter').value;
-                const completedDate = document.getElementById('filterCompletedDate') ? document.getElementById('filterCompletedDate').value : '';
+                const completedDateFrom = document.getElementById('filterCompletedDateFrom') ? document.getElementById('filterCompletedDateFrom').value : '';
+                const completedDateTo = document.getElementById('filterCompletedDateTo') ? document.getElementById('filterCompletedDateTo').value : '';
                 const productName = document.getElementById('filterProductName') ? document.getElementById('filterProductName').value.trim() : '';
                 const batchLot = document.getElementById('filterBatchLot') ? document.getElementById('filterBatchLot').value.trim() : '';
 
                 let url = `${API_BASE}/api/blending/works?status=${encodeURIComponent(statusFilter)}`;
-                if (completedDate) url += `&completed_date=${encodeURIComponent(completedDate)}`;
+                if (completedDateFrom) url += `&completed_date_from=${encodeURIComponent(completedDateFrom)}`;
+                if (completedDateTo) url += `&completed_date_to=${encodeURIComponent(completedDateTo)}`;
                 if (productName) url += `&product_name=${encodeURIComponent(productName)}`;
                 if (batchLot) url += `&batch_lot=${encodeURIComponent(batchLot)}`;
 
@@ -3933,11 +3928,13 @@ function updateLanguage() {
         }
 
         function resetBlendingFilters() {
-            const dateEl = document.getElementById('filterCompletedDate');
+            const dateFromEl = document.getElementById('filterCompletedDateFrom');
+            const dateToEl = document.getElementById('filterCompletedDateTo');
             const prodEl = document.getElementById('filterProductName');
             const lotEl = document.getElementById('filterBatchLot');
             const statusEl = document.getElementById('blendingLogStatusFilter');
-            if (dateEl) dateEl.value = '';
+            if (dateFromEl) dateFromEl.value = '';
+            if (dateToEl) dateToEl.value = '';
             if (prodEl) prodEl.value = '';
             if (lotEl) lotEl.value = '';
             if (statusEl) statusEl.value = 'in_progress';

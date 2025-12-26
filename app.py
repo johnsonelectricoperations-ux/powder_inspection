@@ -2562,7 +2562,8 @@ def get_blending_works():
         status = request.args.get('status', 'all')  # all, completed, in_progress
         product_name = request.args.get('product_name')
         batch_lot = request.args.get('batch_lot')
-        completed_date = request.args.get('completed_date')  # YYYY-MM-DD
+        completed_date_from = request.args.get('completed_date_from')  # YYYY-MM-DD
+        completed_date_to = request.args.get('completed_date_to')  # YYYY-MM-DD
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()
@@ -2592,10 +2593,17 @@ def get_blending_works():
                 where_clauses.append('batch_lot LIKE ?')
                 params.append(f"%{batch_lot}%")
 
-            if completed_date:
-                # filter by DATE(end_time) == completed_date
-                where_clauses.append("DATE(end_time) = ?")
-                params.append(completed_date)
+            # 날짜 범위 필터
+            if completed_date_from and completed_date_to:
+                where_clauses.append("DATE(end_time) BETWEEN ? AND ?")
+                params.append(completed_date_from)
+                params.append(completed_date_to)
+            elif completed_date_from:
+                where_clauses.append("DATE(end_time) >= ?")
+                params.append(completed_date_from)
+            elif completed_date_to:
+                where_clauses.append("DATE(end_time) <= ?")
+                params.append(completed_date_to)
 
             query = base_select
             if where_clauses:
