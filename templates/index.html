@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- JsBarcode for barcode rendering -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- ApexCharts for dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         /* 라벨 패널 스타일: 인쇄용 100mm x 100mm 박스 */
         .label-panel {
@@ -100,13 +102,121 @@
         <div id="dashboard" class="page active">
             <div class="page-header">
                 <h2 data-i18n="dashboardTitle">대시보드</h2>
-                <p data-i18n="dashboardDesc">진행중인 검사 목록과 전체 현황을 확인하세요</p>
+                <p data-i18n="dashboardDesc">실시간 작업 현황과 품질 지표를 확인하세요</p>
             </div>
-            <div class="card">
-                <div class="card-title">📋 <span data-i18n="ongoingInspections">진행중인 검사</span></div>
-                <div id="incompleteList">
-                    <div class="loading" data-i18n="loading">로딩 중...</div>
+
+            <!-- KPI 카드 영역 -->
+            <div class="dashboard-kpi-cards">
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-icon">📦</div>
+                    <div class="kpi-content">
+                        <div class="kpi-label" data-i18n="kpiTodayInspections">오늘 검사</div>
+                        <div class="kpi-value" id="kpiTodayInspections">-</div>
+                        <div class="kpi-sub" data-i18n="kpiInspectionsUnit">건</div>
+                    </div>
                 </div>
+                <div class="kpi-card kpi-purple">
+                    <div class="kpi-icon">⚗️</div>
+                    <div class="kpi-content">
+                        <div class="kpi-label" data-i18n="kpiWorkProgress">작업 진도율</div>
+                        <div class="kpi-value" id="kpiWorkProgress">-</div>
+                        <div class="kpi-sub">%</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-green">
+                    <div class="kpi-icon">✅</div>
+                    <div class="kpi-content">
+                        <div class="kpi-label" data-i18n="kpiPassRate">이번주 합격률</div>
+                        <div class="kpi-value" id="kpiPassRate">-</div>
+                        <div class="kpi-sub">%</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-red">
+                    <div class="kpi-icon">🚨</div>
+                    <div class="kpi-content">
+                        <div class="kpi-label" data-i18n="kpiFailCount">불합격 건수</div>
+                        <div class="kpi-value" id="kpiFailCount">-</div>
+                        <div class="kpi-sub" data-i18n="kpiFailUnit">건 (이번주)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 차트 영역 -->
+            <div class="dashboard-charts-grid">
+                <!-- 작업지시 진도율 -->
+                <div class="chart-card chart-wide">
+                    <div class="chart-header">
+                        <h3>📋 <span data-i18n="chartWorkProgress">작업지시 대비 진도율</span></h3>
+                        <select id="progressDateFilter" class="chart-filter">
+                            <option value="today" data-i18n="filterToday">오늘</option>
+                            <option value="week" selected data-i18n="filterWeek">이번주</option>
+                            <option value="month" data-i18n="filterMonth">이번달</option>
+                        </select>
+                    </div>
+                    <div id="chartWorkProgress"></div>
+                </div>
+
+                <!-- 합격률 도넛 차트 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>🎯 <span data-i18n="chartQualityRate">검사 합격률</span></h3>
+                    </div>
+                    <div id="chartQualityRate"></div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #4CAF50;"></span>
+                            <span data-i18n="legendPass">합격</span>: <span id="legendPassCount">-</span>건
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #F44336;"></span>
+                            <span data-i18n="legendFail">불합격</span>: <span id="legendFailCount">-</span>건
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #FFC107;"></span>
+                            <span data-i18n="legendInProgress">진행중</span>: <span id="legendInProgressCount">-</span>건
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 일별 검사 추이 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>📊 <span data-i18n="chartDailyTrend">최근 7일 검사 현황</span></h3>
+                    </div>
+                    <div id="chartDailyTrend"></div>
+                </div>
+
+                <!-- 분말별 검사 현황 -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>🔬 <span data-i18n="chartPowderStatus">분말별 검사 현황 (이번주)</span></h3>
+                    </div>
+                    <div id="chartPowderStatus"></div>
+                </div>
+            </div>
+
+            <!-- 빠른 작업 버튼 -->
+            <div class="quick-actions">
+                <button class="quick-action-btn" onclick="showPage('incoming')">
+                    <span class="qa-icon">📦</span>
+                    <span class="qa-label" data-i18n="qaIncoming">수입분말 검사</span>
+                </button>
+                <button class="quick-action-btn" onclick="showPage('blending')">
+                    <span class="qa-icon">⚗️</span>
+                    <span class="qa-label" data-i18n="qaBlending">배합작업</span>
+                </button>
+                <button class="quick-action-btn" onclick="showPage('search')">
+                    <span class="qa-icon">🔍</span>
+                    <span class="qa-label" data-i18n="qaSearch">검사결과 조회</span>
+                </button>
+                <button class="quick-action-btn" onclick="showPage('traceability')">
+                    <span class="qa-icon">🔗</span>
+                    <span class="qa-label" data-i18n="qaTraceability">추적성 조회</span>
+                </button>
+                <button class="quick-action-btn" onclick="showPage('blending-orders')">
+                    <span class="qa-icon">📋</span>
+                    <span class="qa-label" data-i18n="qaOrders">작업계획 등록</span>
+                </button>
             </div>
         </div>
 

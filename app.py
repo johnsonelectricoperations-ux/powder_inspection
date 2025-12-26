@@ -3090,6 +3090,276 @@ def verify_admin_password():
         return jsonify({'success': False, 'message': str(e)})
 
 # ============================================
+# 대시보드 API
+# ============================================
+
+@app.route('/api/dashboard/kpi', methods=['GET'])
+def get_dashboard_kpi():
+    """대시보드 KPI 통계"""
+    try:
+        from datetime import date, timedelta
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            today = date.today().isoformat()
+            week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+            # 1. 오늘 검사 건수
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) = ?
+            ''', (today,))
+            today_inspections = cursor.fetchone()[0]
+
+            # 2. 작업 진도율 (이번주)
+            cursor.execute('''
+                SELECT COALESCE(SUM(total_target_weight), 0)
+                FROM blending_order
+                WHERE DATE(created_date) >= ?
+            ''', (week_start,))
+            target_weight = cursor.fetchone()[0] or 0
+
+            cursor.execute('''
+                SELECT COALESCE(SUM(actual_total_weight), 0)
+                FROM blending_work
+                WHERE DATE(start_time) >= ? AND status = 'completed'
+            ''', (week_start,))
+            actual_weight = cursor.fetchone()[0] or 0
+
+            work_progress = round((actual_weight / target_weight * 100), 1) if target_weight > 0 else 0
+
+            # 3. 이번주 합격률
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed'
+            ''', (week_start,))
+            total_inspections = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'pass'
+            ''', (week_start,))
+            passed_inspections = cursor.fetchone()[0]
+
+            pass_rate = round((passed_inspections / total_inspections * 100), 1) if total_inspections > 0 else 0
+
+            # 4. 이번주 불합격 건수
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'fail'
+            ''', (week_start,))
+            fail_count = cursor.fetchone()[0]
+
+            return jsonify({
+                'success': True,
+                'data': {
+                    'today_inspections': today_inspections,
+                    'work_progress': work_progress,
+                    'pass_rate': pass_rate,
+                    'fail_count': fail_count
+                }
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/work-progress', methods=['GET'])
+def get_work_progress():
+    """작업지시 대비 진도율 (날짜 필터별)"""
+    try:
+        from datetime import date, timedelta
+
+        date_filter = request.args.get('filter', 'week')  # today, week, month
+
+        if date_filter == 'today':
+            start_date = date.today().isoformat()
+        elif date_filter == 'week':
+            start_date = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+        else:  # month
+            start_date = date.today().replace(day=1).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 작업지시별 진도율
+            cursor.execute('''
+                SELECT
+                    bo.work_order_number,
+                    bo.product_name,
+                    bo.total_target_weight,
+                    COALESCE(SUM(bw.actual_total_weight), 0) as completed_weight
+                FROM blending_order bo
+                LEFT JOIN blending_work bw ON bo.id = bw.work_order_id AND bw.status = 'completed'
+                WHERE DATE(bo.created_date) >= ?
+                GROUP BY bo.id, bo.work_order_number, bo.product_name, bo.total_target_weight
+                ORDER BY bo.created_date DESC
+                LIMIT 10
+            ''', (start_date,))
+
+            orders = []
+            for row in cursor.fetchall():
+                work_order = row[0]
+                product = row[1]
+                target = row[2]
+                completed = row[3]
+                progress = round((completed / target * 100), 1) if target > 0 else 0
+
+                orders.append({
+                    'work_order': work_order,
+                    'product': product,
+                    'target': target,
+                    'completed': completed,
+                    'progress': progress
+                })
+
+            return jsonify({
+                'success': True,
+                'data': orders
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/quality-rate', methods=['GET'])
+def get_quality_rate():
+    """검사 합격률 (도넛 차트용)"""
+    try:
+        from datetime import date, timedelta
+
+        week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 합격
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'pass'
+            ''', (week_start,))
+            passed = cursor.fetchone()[0]
+
+            # 불합격
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'fail'
+            ''', (week_start,))
+            failed = cursor.fetchone()[0]
+
+            # 진행중
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'in_progress'
+            ''', (week_start,))
+            in_progress = cursor.fetchone()[0]
+
+            return jsonify({
+                'success': True,
+                'data': {
+                    'passed': passed,
+                    'failed': failed,
+                    'in_progress': in_progress
+                }
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/daily-trend', methods=['GET'])
+def get_daily_trend():
+    """최근 7일 검사 추이"""
+    try:
+        from datetime import date, timedelta
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            trend_data = []
+
+            for i in range(6, -1, -1):
+                target_date = (date.today() - timedelta(days=i)).isoformat()
+
+                # 수입분말 검사
+                cursor.execute('''
+                    SELECT COUNT(*) FROM inspection_result
+                    WHERE DATE(created_at) = ? AND category = 'incoming' AND status = 'completed'
+                ''', (target_date,))
+                incoming_count = cursor.fetchone()[0]
+
+                # 배합분말 검사
+                cursor.execute('''
+                    SELECT COUNT(*) FROM inspection_result
+                    WHERE DATE(created_at) = ? AND category = 'mixing' AND status = 'completed'
+                ''', (target_date,))
+                mixing_count = cursor.fetchone()[0]
+
+                trend_data.append({
+                    'date': target_date,
+                    'incoming': incoming_count,
+                    'mixing': mixing_count
+                })
+
+            return jsonify({
+                'success': True,
+                'data': trend_data
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/powder-status', methods=['GET'])
+def get_powder_status():
+    """분말별 검사 현황 (이번주)"""
+    try:
+        from datetime import date, timedelta
+
+        week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 분말별 검사 통계
+            cursor.execute('''
+                SELECT
+                    powder_name,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN final_result = 'pass' THEN 1 ELSE 0 END) as passed
+                FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed'
+                GROUP BY powder_name
+                ORDER BY total DESC
+                LIMIT 8
+            ''', (week_start,))
+
+            powder_data = []
+            for row in cursor.fetchall():
+                powder_name = row[0]
+                total = row[1]
+                passed = row[2]
+                failed = total - passed
+                pass_rate = round((passed / total * 100), 1) if total > 0 else 0
+
+                powder_data.append({
+                    'powder': powder_name,
+                    'total': total,
+                    'passed': passed,
+                    'failed': failed,
+                    'pass_rate': pass_rate
+                })
+
+            return jsonify({
+                'success': True,
+                'data': powder_data
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
 # 서버 실행
 # ============================================
 

@@ -4543,8 +4543,350 @@ function updateLanguage() {
             return `<div style="display:flex;flex-direction:column;align-items:flex-start;">${boxesHtml}${remainingText}${note}</div>`;
         }
 
+        // ============================================
+        // 대시보드 함수
+        // ============================================
+
+        // 차트 객체 저장
+        let charts = {
+            workProgress: null,
+            qualityRate: null,
+            dailyTrend: null,
+            powderStatus: null
+        };
+
+        // 대시보드 로드
+        async function loadDashboard() {
+            await loadDashboardKPI();
+            await loadWorkProgressChart('week');
+            await loadQualityRateChart();
+            await loadDailyTrendChart();
+            await loadPowderStatusChart();
+        }
+
+        // KPI 카드 로드
+        async function loadDashboardKPI() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/kpi`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('kpiTodayInspections').textContent = data.data.today_inspections;
+                    document.getElementById('kpiWorkProgress').textContent = data.data.work_progress;
+                    document.getElementById('kpiPassRate').textContent = data.data.pass_rate;
+                    document.getElementById('kpiFailCount').textContent = data.data.fail_count;
+                }
+            } catch (error) {
+                console.error('KPI 로드 실패:', error);
+            }
+        }
+
+        // 작업지시 진도율 차트
+        async function loadWorkProgressChart(filter = 'week') {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/work-progress?filter=${filter}`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    const categories = data.data.map(item => item.work_order);
+                    const progressData = data.data.map(item => item.progress);
+                    const targetData = data.data.map(item => item.target);
+                    const completedData = data.data.map(item => item.completed);
+
+                    const options = {
+                        series: [{
+                            name: '진도율',
+                            data: progressData
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: { show: false }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 8,
+                                dataLabels: {
+                                    position: 'top'
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (val) {
+                                return val.toFixed(1) + '%';
+                            },
+                            offsetX: -10,
+                            style: {
+                                fontSize: '12px',
+                                colors: ['#fff']
+                            }
+                        },
+                        colors: ['#9C27B0'],
+                        xaxis: {
+                            categories: categories,
+                            max: 100,
+                            labels: {
+                                formatter: function (val) {
+                                    return val + '%';
+                                }
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    fontSize: '11px'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            custom: function({series, seriesIndex, dataPointIndex, w}) {
+                                const target = targetData[dataPointIndex];
+                                const completed = completedData[dataPointIndex];
+                                const progress = progressData[dataPointIndex];
+                                return `<div style="padding: 10px;">
+                                    <strong>${categories[dataPointIndex]}</strong><br/>
+                                    목표: ${target.toLocaleString()} kg<br/>
+                                    완료: ${completed.toLocaleString()} kg<br/>
+                                    진도율: ${progress.toFixed(1)}%
+                                </div>`;
+                            }
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        }
+                    };
+
+                    if (charts.workProgress) {
+                        charts.workProgress.destroy();
+                    }
+                    charts.workProgress = new ApexCharts(document.querySelector("#chartWorkProgress"), options);
+                    charts.workProgress.render();
+                } else {
+                    document.getElementById('chartWorkProgress').innerHTML =
+                        '<div style="text-align:center;padding:50px;color:#999;">작업지시 데이터가 없습니다</div>';
+                }
+            } catch (error) {
+                console.error('작업진도율 차트 로드 실패:', error);
+            }
+        }
+
+        // 합격률 도넛 차트
+        async function loadQualityRateChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/quality-rate`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const passed = data.data.passed;
+                    const failed = data.data.failed;
+                    const inProgress = data.data.in_progress;
+
+                    // 범례 업데이트
+                    document.getElementById('legendPassCount').textContent = passed;
+                    document.getElementById('legendFailCount').textContent = failed;
+                    document.getElementById('legendInProgressCount').textContent = inProgress;
+
+                    const options = {
+                        series: [passed, failed, inProgress],
+                        labels: ['합격', '불합격', '진행중'],
+                        chart: {
+                            type: 'donut',
+                            height: 300
+                        },
+                        colors: ['#4CAF50', '#F44336', '#FFC107'],
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (val, opts) {
+                                return opts.w.config.series[opts.seriesIndex];
+                            }
+                        },
+                        legend: {
+                            show: false
+                        },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '65%',
+                                    labels: {
+                                        show: true,
+                                        total: {
+                                            show: true,
+                                            label: '총 검사',
+                                            fontSize: '16px',
+                                            fontWeight: 600,
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    if (charts.qualityRate) {
+                        charts.qualityRate.destroy();
+                    }
+                    charts.qualityRate = new ApexCharts(document.querySelector("#chartQualityRate"), options);
+                    charts.qualityRate.render();
+                }
+            } catch (error) {
+                console.error('합격률 차트 로드 실패:', error);
+            }
+        }
+
+        // 일별 검사 추이 차트
+        async function loadDailyTrendChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/daily-trend`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const dates = data.data.map(item => {
+                        const date = new Date(item.date);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    });
+                    const incomingData = data.data.map(item => item.incoming);
+                    const mixingData = data.data.map(item => item.mixing);
+
+                    const options = {
+                        series: [{
+                            name: '수입분말',
+                            data: incomingData
+                        }, {
+                            name: '배합분말',
+                            data: mixingData
+                        }],
+                        chart: {
+                            type: 'line',
+                            height: 300,
+                            toolbar: { show: false }
+                        },
+                        colors: ['#2196F3', '#9C27B0'],
+                        stroke: {
+                            width: 3,
+                            curve: 'smooth'
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        xaxis: {
+                            categories: dates
+                        },
+                        yaxis: {
+                            title: {
+                                text: '검사 건수'
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right'
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        },
+                        markers: {
+                            size: 4,
+                            strokeWidth: 0,
+                            hover: {
+                                size: 7
+                            }
+                        }
+                    };
+
+                    if (charts.dailyTrend) {
+                        charts.dailyTrend.destroy();
+                    }
+                    charts.dailyTrend = new ApexCharts(document.querySelector("#chartDailyTrend"), options);
+                    charts.dailyTrend.render();
+                }
+            } catch (error) {
+                console.error('일별 추이 차트 로드 실패:', error);
+            }
+        }
+
+        // 분말별 검사 현황 차트
+        async function loadPowderStatusChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/powder-status`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    const categories = data.data.map(item => item.powder);
+                    const passedData = data.data.map(item => item.passed);
+                    const failedData = data.data.map(item => item.failed);
+
+                    const options = {
+                        series: [{
+                            name: '합격',
+                            data: passedData
+                        }, {
+                            name: '불합격',
+                            data: failedData
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 300,
+                            stacked: true,
+                            toolbar: { show: false }
+                        },
+                        colors: ['#4CAF50', '#F44336'],
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 6
+                            }
+                        },
+                        dataLabels: {
+                            enabled: true
+                        },
+                        xaxis: {
+                            categories: categories
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    fontSize: '11px'
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right'
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        }
+                    };
+
+                    if (charts.powderStatus) {
+                        charts.powderStatus.destroy();
+                    }
+                    charts.powderStatus = new ApexCharts(document.querySelector("#chartPowderStatus"), options);
+                    charts.powderStatus.render();
+                } else {
+                    document.getElementById('chartPowderStatus').innerHTML =
+                        '<div style="text-align:center;padding:50px;color:#999;">검사 데이터가 없습니다</div>';
+                }
+            } catch (error) {
+                console.error('분말별 현황 차트 로드 실패:', error);
+            }
+        }
+
+        // 진도율 필터 변경 이벤트
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressFilter = document.getElementById('progressDateFilter');
+            if (progressFilter) {
+                progressFilter.addEventListener('change', function() {
+                    loadWorkProgressChart(this.value);
+                });
+            }
+        });
+
         // 초기 로드
         window.onload = () => {
             updateLanguage();
-            loadIncompleteInspections();
+            loadDashboard();
         };
