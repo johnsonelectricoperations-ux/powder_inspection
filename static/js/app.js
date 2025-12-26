@@ -19,6 +19,103 @@ function safeAddEventListener(elementId, eventType, handler) {
     return false;
 }
 
+// 한국어 텍스트 매핑 함수
+function t(key) {
+    const ko = {
+        // 사이드바
+        appTitle: '배합공정 관리시스템',
+        navDashboard: '대시보드',
+        navIncoming: '수입검사',
+        navMixing: '배합검사',
+        navStartInspection: '새 검사 시작',
+        navSearchResults: '검사결과 조회',
+        navAdmin: '관리자 모드',
+
+        // 대시보드
+        dashboardTitle: '대시보드',
+        ongoingInspections: '진행중인 검사',
+        noOngoingInspections: '진행중인 검사가 없습니다',
+        powderName: '분말명',
+        lotNumber: 'LOT번호',
+        inspectionType: '검사타입',
+        inspector: '검사자',
+        progress: '진행률',
+        action: '작업',
+        continue: '이어하기',
+        category: '검사구분',
+        incoming: '수입검사',
+        mixing: '배합검사',
+        all: '전체',
+
+        // 검사 관련
+        inspectionTime: '검사시간',
+        finalResult: '최종결과',
+        detail: '상세',
+        view: '보기',
+        noResults: '검색 결과가 없습니다',
+        average: '평균',
+        result: '결과',
+        inspectionDetails: '검사 항목 상세',
+        particleSize: '입도분석',
+
+        // 검사 항목
+        flowRate: '유동도',
+        apparentDensity: '겉보기밀도',
+        cContent: 'C함량',
+        cuContent: 'Cu함량',
+        moisture: '수분도',
+        ash: '회분도',
+        sinterChangeRate: '소결변화율',
+        sinterStrength: '소결강도',
+        formingStrength: '성형강도',
+        formingLoad: '성형하중',
+
+        // 삭제 확인
+        deleteInspectionConfirm: '진행중인 검사를 삭제하시겠습니까?',
+        deleteSuccess: '삭제되었습니다',
+        deleteError: '삭제 실패',
+        delete: '삭제',
+
+        // 관리자
+        noPowders: '등록된 분말이 없습니다',
+        selectPowderPlaceholder: '분말을 선택하세요',
+        meshSize: 'Mesh Size',
+        minValue: '최소값',
+        maxValue: '최대값',
+        noParticleSpecs: '등록된 입도분석 규격이 없습니다',
+        addParticleSpec: '입도분석 규격 추가',
+        editParticleSpec: '입도분석 규격 수정',
+        edit: '수정',
+        inspectorName: '검사자 이름',
+        noInspectors: '등록된 검사자가 없습니다',
+        operatorName: '작업자 이름',
+        noOperators: '등록된 작업자가 없습니다',
+        addPowder: '새 분말 추가',
+        editPowder: '분말 수정',
+        selectPlaceholder: '선택하세요',
+
+        // Recipe 관련
+        noProducts: '등록된 제품이 없습니다',
+        productCode: '제품 코드',
+        ratio: '비율',
+        tolerance: '허용 오차',
+        totalRatio: '합계',
+        addNewProduct: '+ 새 제품 추가',
+        editProduct: '제품 수정',
+
+        // 배합 작업
+        calculatedWeight: '계산된 중량',
+
+        // 라벨/바코드
+        companyName: 'Johnson Electric Operations',
+        labelPack: 'Pack',
+        labelWeight: '중량',
+        labelDate: '작업날짜',
+        printLabel: '인쇄'
+    };
+    return ko[key] || key;
+}
+
         // ============================================
         // 준비중 메뉴 안내
         // ============================================
@@ -434,7 +531,7 @@ function safeAddEventListener(elementId, eventType, handler) {
         // 검사 진행 화면용 검사자 목록 로드
         async function loadInspectorListForInspection() {
             try {
-                const response = await fetch(`${API_BASE}/api/inspectors`);
+                const response = await fetch(`${API_BASE}/api/inspector-list`);
                 const data = await response.json();
 
                 const select = document.getElementById('infoInspector');
@@ -4250,6 +4347,15 @@ function safeAddEventListener(elementId, eventType, handler) {
             }
         }
 
+        // 작업지시서용 Recipe 로드 (제품 선택 시)
+        async function loadOrderRecipe() {
+            const productName = document.getElementById('orderProductName')?.value;
+            if (!productName) return;
+
+            // 필요시 Recipe 정보를 표시할 수 있음
+            // 현재는 제품 선택만 처리
+        }
+
         // 작업지시서 생성 폼 제출
         const orderFormElement = document.getElementById('blendingOrderForm');
         if (orderFormElement) {
@@ -4921,6 +5027,5 @@ function safeAddEventListener(elementId, eventType, handler) {
 
         // 초기 로드
         window.onload = () => {
-            updateLanguage();
             loadDashboard();
         };
