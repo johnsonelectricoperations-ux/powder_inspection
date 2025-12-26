@@ -525,7 +525,7 @@ function t(key) {
                 // 배합검사: 검사자를 선택할 수 있음
                 // 먼저 select 요소 생성
                 inspectorDisplay.innerHTML = `
-                    <select id="infoInspector" onchange="updateInspector()" style="font-size: 1.1em; font-weight: 600; padding: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; width: 100%;">
+                    <select id="infoInspector" onchange="updateInspector()" style="font-size: 1.1em; font-weight: 600; padding: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); color: #000; border-radius: 6px; cursor: pointer; width: 100%;">
                         <option value="">선택하세요</option>
                     </select>
                 `;
