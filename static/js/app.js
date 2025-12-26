@@ -3914,7 +3914,8 @@ function t(key) {
 
         async function loadBlendingWorks() {
             try {
-                const statusFilter = document.getElementById('blendingLogStatusFilter').value;
+                const statusFilterEl = document.getElementById('blendingLogStatusFilter');
+                const statusFilter = statusFilterEl ? statusFilterEl.value : 'in_progress';
                 const completedDateFrom = document.getElementById('filterCompletedDateFrom') ? document.getElementById('filterCompletedDateFrom').value : '';
                 const completedDateTo = document.getElementById('filterCompletedDateTo') ? document.getElementById('filterCompletedDateTo').value : '';
                 const productName = document.getElementById('filterProductName') ? document.getElementById('filterProductName').value.trim() : '';
@@ -3930,6 +3931,7 @@ function t(key) {
                 const data = await response.json();
 
                 const tbody = document.getElementById('blendingWorksTableBody');
+                if (!tbody) return;
 
                 if (!data.success || !data.works || data.works.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="empty-message">배합작업 내역이 없습니다.</td></tr>';
