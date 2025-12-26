@@ -657,7 +657,7 @@ table tbody tr:hover {
 /* KPI 카드 영역 */
 .dashboard-kpi-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -791,11 +791,14 @@ table tbody tr:hover {
 }
 
 /* 차트 컨테이너 */
-#chartWorkProgress,
+#chartWorkProgress {
+    min-height: 400px;
+}
+
 #chartQualityRate,
 #chartDailyTrend,
 #chartPowderStatus {
-    min-height: 300px;
+    min-height: 350px;
 }
 
 /* 범례 스타일 */
@@ -866,6 +869,12 @@ table tbody tr:hover {
 }
 
 /* 반응형 디자인 */
+@media (max-width: 1400px) {
+    .dashboard-kpi-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 1200px) {
     .dashboard-charts-grid {
         grid-template-columns: 1fr;
@@ -878,7 +887,7 @@ table tbody tr:hover {
 
 @media (max-width: 768px) {
     .dashboard-kpi-cards {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .chart-legend {
@@ -892,6 +901,10 @@ table tbody tr:hover {
 }
 
 @media (max-width: 480px) {
+    .dashboard-kpi-cards {
+        grid-template-columns: 1fr;
+    }
+
     .kpi-value {
         font-size: 28px;
     }
