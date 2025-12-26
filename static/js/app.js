@@ -587,7 +587,8 @@ function t(key) {
                     body: JSON.stringify({
                         powderName: currentInspection.powderName,
                         lotNumber: currentInspection.lotNumber,
-                        inspector: newInspector
+                        inspector: newInspector,
+                        category: currentInspection.category || 'incoming'
                     })
                 });
 

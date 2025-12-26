@@ -471,6 +471,7 @@ def update_inspector():
         powder_name = data.get('powderName')
         lot_number = data.get('lotNumber')
         inspector = data.get('inspector')
+        category = data.get('category', 'incoming')
 
         if not all([powder_name, lot_number, inspector]):
             return jsonify({'success': False, 'message': '필수 항목이 누락되었습니다.'})
@@ -478,19 +479,19 @@ def update_inspector():
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            # inspection_progress 테이블 업데이트
+            # inspection_progress 테이블 업데이트 (category도 조건에 포함)
             cursor.execute('''
                 UPDATE inspection_progress
                 SET inspector = ?
-                WHERE powder_name = ? AND lot_number = ?
-            ''', (inspector, powder_name, lot_number))
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (inspector, powder_name, lot_number, category))
 
             # inspection_result 테이블도 업데이트 (이미 생성된 경우)
             cursor.execute('''
                 UPDATE inspection_result
                 SET inspector = ?
-                WHERE powder_name = ? AND lot_number = ?
-            ''', (inspector, powder_name, lot_number))
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (inspector, powder_name, lot_number, category))
 
             conn.commit()
 
