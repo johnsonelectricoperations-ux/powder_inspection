@@ -509,6 +509,13 @@ table tbody tr:hover {
     padding: 10px;
 }
 
+/* 검사결과 조회 테이블 - 최대 7개 행 표시 */
+#searchResults {
+    max-height: 450px; /* 헤더(50px) + 7개 행(~57px each) */
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
 /* 스크롤 가능한 테이블 컨테이너 */
 .scrollable-table-container {
     max-height: calc(100vh - 450px);
