@@ -520,21 +520,21 @@ function t(key) {
             if (category === 'incoming') {
                 // 수입검사: 검사자를 표시만 (수정 불가)
                 const inspectorName = currentInspection.inspector || '미지정';
-                inspectorDisplay.innerHTML = `<p style="font-size: 1.1em; font-weight: 600;">${inspectorName}</p>`;
+                inspectorDisplay.innerHTML = `<p style="font-size: 1.1em; font-weight: 600; color: white;">${inspectorName}</p>`;
             } else if (category === 'mixing') {
                 // 배합검사: 검사자를 선택할 수 있음
-                await loadInspectorListForInspection();
+                // 먼저 select 요소 생성
                 inspectorDisplay.innerHTML = `
                     <select id="infoInspector" onchange="updateInspector()" style="font-size: 1.1em; font-weight: 600; padding: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; width: 100%;">
                         <option value="">선택하세요</option>
                     </select>
                 `;
 
-                // 검사자 목록 다시 로드 (select가 새로 생성되었으므로)
+                // select가 생성된 후 검사자 목록 로드
                 await loadInspectorListForInspection();
                 const inspectorSelect = document.getElementById('infoInspector');
-                if (inspectorSelect) {
-                    inspectorSelect.value = currentInspection.inspector || '';
+                if (inspectorSelect && currentInspection.inspector) {
+                    inspectorSelect.value = currentInspection.inspector;
                 }
             }
 
