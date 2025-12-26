@@ -318,7 +318,8 @@ def _do_start_inspection():
                     'startTime': to_kst_str(progress_data['start_time']),
                     'completedItems': json.loads(progress_data['completed_items'] or '[]'),
                     'totalItems': json.loads(progress_data['total_items'] or '[]'),
-                    'progress': progress_data['progress']
+                    'progress': progress_data['progress'],
+                    'category': progress_data.get('category', 'incoming')
                 },
                 'items': items
             })
@@ -331,6 +332,7 @@ def _do_start_inspection():
         result_row = cursor.fetchone()
 
         if result_row:
+            result_data = dict_from_row(result_row)
             return jsonify({
                 'success': True,
                 'isExisting': True,
@@ -340,7 +342,8 @@ def _do_start_inspection():
                     'inspectionType': inspection_type,
                     'inspector': inspector,
                     'isCompleted': True,
-                    'progress': '완료'
+                    'progress': '완료',
+                    'category': result_data.get('category', 'incoming')
                 },
                 'items': []
             })
@@ -372,7 +375,8 @@ def _do_start_inspection():
                 'inspectionType': inspection_type,
                 'inspector': inspector,
                 'completedItems': [],
-                'totalItems': item_names
+                'totalItems': item_names,
+                'category': category
             },
             'items': items
         })
