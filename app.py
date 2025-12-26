@@ -486,6 +486,9 @@ def update_inspector():
                 WHERE powder_name = ? AND lot_number = ? AND category = ?
             ''', (inspector, powder_name, lot_number, category))
 
+            # 진행중 검사 업데이트 성공 여부 확인
+            progress_updated = cursor.rowcount > 0
+
             # inspection_result 테이블도 업데이트 (이미 생성된 경우)
             cursor.execute('''
                 UPDATE inspection_result
@@ -495,7 +498,7 @@ def update_inspector():
 
             conn.commit()
 
-            if cursor.rowcount == 0:
+            if not progress_updated:
                 return jsonify({'success': False, 'message': '검사를 찾을 수 없습니다.'})
 
             return jsonify({'success': True, 'message': '검사자가 변경되었습니다.'})
