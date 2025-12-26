@@ -518,11 +518,9 @@
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="lotNumberLabel">LOT 번호</p>
                         <p style="font-size: 1.2em; font-weight: 600;"><span id="infoLotNumber"></span></p>
                     </div>
-                    <div>
+                    <div id="inspectorContainer">
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="inspectorLabel">검사자</p>
-                        <select id="infoInspector" onchange="updateInspector()" style="font-size: 1.1em; font-weight: 600; padding: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; width: 100%;">
-                            <option value="">선택하세요</option>
-                        </select>
+                        <div id="inspectorDisplay"></div>
                     </div>
                     <div>
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="progressStatus">진행 상황</p>
