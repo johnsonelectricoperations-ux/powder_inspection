@@ -1498,14 +1498,15 @@ function t(key) {
                         const particleData = await particleResponse.json();
 
                         if (particleData.success && particleData.data.length > 0) {
-                            html += `<div style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
+                            html += `<div id="particleDetailSection" style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
                             html += `<h5 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.95em; font-weight: 600;">📊 입도분석 상세</h5>`;
-                            html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
+                            html += `<div id="particleGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
 
                             // particle_size 테이블 데이터를 순회하며 표시
                             particleData.data.forEach(p => {
-                                html += `<div style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
-                                html += `<strong style="font-weight: 600;">${p.mesh_size}</strong>: ${p.min_value || '-'} ~ ${p.max_value || '-'} %`;
+                                html += `<div class="particle-item" data-mesh="${p.mesh_size}" data-min="${p.min_value || ''}" data-max="${p.max_value || ''}" style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
+                                html += `<strong style="font-weight: 600;">${p.mesh_size}</strong>: `;
+                                html += `<span class="particle-min">${p.min_value || '-'}</span> ~ <span class="particle-max">${p.max_value || '-'}</span> %`;
                                 html += `</div>`;
                             });
 
@@ -1576,6 +1577,25 @@ function t(key) {
                     `;
                 }
             });
+
+            // 입도분석 항목도 편집 가능하게 만들기
+            const particleItems = document.querySelectorAll('.particle-item');
+            particleItems.forEach(item => {
+                const minValue = item.dataset.min || '';
+                const maxValue = item.dataset.max || '';
+                const meshSize = item.dataset.mesh;
+
+                const minSpan = item.querySelector('.particle-min');
+                const maxSpan = item.querySelector('.particle-max');
+
+                if (minSpan) {
+                    minSpan.innerHTML = `<input type="number" step="0.01" value="${minValue}" style="width:60px; padding:2px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (maxSpan) {
+                    maxSpan.innerHTML = `<input type="number" step="0.01" value="${maxValue}" style="width:60px; padding:2px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+            });
         }
 
         async function saveInlineEdit() {
@@ -1605,6 +1625,7 @@ function t(key) {
             });
 
             try {
+                // 1. 분말 사양 저장
                 const response = await fetch(`${API_BASE}/api/admin/powder-spec/${specId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -1612,14 +1633,53 @@ function t(key) {
                 });
 
                 const result = await response.json();
-                if (result.success) {
-                    alert('저장되었습니다.');
-                    isInlineEditMode = false;
-                    // 다시 로드
-                    showPowderSpecDetail(parseInt(specId));
-                } else {
+                if (!result.success) {
                     alert('저장 실패: ' + (result.message || '알 수 없는 오류'));
+                    return;
                 }
+
+                // 2. 입도분석 데이터 저장 (있는 경우)
+                const particleItems = document.querySelectorAll('.particle-item');
+                if (particleItems.length > 0) {
+                    const particleSpecs = [];
+                    particleItems.forEach(item => {
+                        const meshSize = item.dataset.mesh;
+                        const minInput = item.querySelector('.particle-min input');
+                        const maxInput = item.querySelector('.particle-max input');
+
+                        if (minInput && maxInput) {
+                            particleSpecs.push({
+                                powder_name: powderName,
+                                mesh_size: meshSize,
+                                min_value: parseFloat(minInput.value) || 0,
+                                max_value: parseFloat(maxInput.value) || 0
+                            });
+                        }
+                    });
+
+                    if (particleSpecs.length > 0) {
+                        const particleResponse = await fetch(`${API_BASE}/api/admin/particle-size/bulk`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                powder_name: powderName,
+                                specs: particleSpecs
+                            })
+                        });
+
+                        const particleResult = await particleResponse.json();
+                        if (!particleResult.success) {
+                            alert('입도분석 저장 실패: ' + (particleResult.message || '알 수 없는 오류'));
+                            return;
+                        }
+                    }
+                }
+
+                alert('저장되었습니다.');
+                isInlineEditMode = false;
+                // 다시 로드
+                showPowderSpecDetail(parseInt(specId));
+
             } catch (error) {
                 console.error('저장 실패:', error);
                 alert('저장 중 오류가 발생했습니다.');
