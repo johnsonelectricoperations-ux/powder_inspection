@@ -3460,7 +3460,7 @@ function t(key) {
                     </button>
                 `;
             } else {
-                // 진행중인 작업 - 배합 작업 완료 및 대시보드 버튼
+                // 진행중인 작업 - 배합 작업 완료 및 조회화면 버튼
                 const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
                 const allValid = currentMaterialInputs.every(input => input.is_valid);
                 const canComplete = allCompleted && allValid;
@@ -3469,8 +3469,8 @@ function t(key) {
                     <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" ${!canComplete ? 'disabled' : ''} style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
                         배합 작업 완료
                     </button>
-                    <button class="btn danger" onclick="showPage('dashboard')" style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
-                        대시보드로 돌아가기
+                    <button class="btn secondary" onclick="showPage('blending-log')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ← 조회화면으로 돌아가기
                     </button>
                 `;
 
