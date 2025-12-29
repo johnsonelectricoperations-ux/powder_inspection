@@ -5357,7 +5357,6 @@ function t(key) {
                                     비율: ${material.ratio}% |
                                     목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
                                     허용오차: ±${material.tolerance}%
-                                    <span style="margin-left: 10px;">허용 범위: ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg</span>
                                 </p>
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
@@ -5378,25 +5377,57 @@ function t(key) {
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: #e0e0e0;">
-                                        <th style="padding: 10px; text-align: left; width: 15%;">📱 LOT 번호</th>
-                                        <th style="padding: 10px; text-align: center; width: 20%;">⚖️ 계량 중량 (kg)</th>
-                                        <th style="padding: 10px; text-align: center; width: 15%;">판정</th>
-                                        <th style="padding: 10px; text-align: center; width: 10%;">결과</th>
-                                        <th style="padding: 10px; text-align: center; width: 10%;">작업</th>
+                                        <th style="padding: 10px; text-align: left; width: 40%;">📱 LOT 번호</th>
+                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (kg)</th>
+                                        <th style="padding: 10px; text-align: center; width: 20%;">작업</th>
                                     </tr>
                                 </thead>
                                 <tbody id="lotTableBody_${idx}">
                                     <!-- LOT 행들이 여기에 추가됨 -->
                                 </tbody>
                             </table>
-                        </div>
 
-                        <!-- 분말 완료 버튼 -->
-                        <div style="margin-top: 15px; text-align: right;">
-                            <button type="button" class="btn" onclick="completeMaterialInput(${idx})"
-                                    id="completeMaterialBtn_${idx}" disabled style="opacity: 0.5;">
-                                ✓ 이 분말 투입 완료
-                            </button>
+                            <!-- 합계 및 판정 영역 -->
+                            <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #2196F3;">
+                                <div style="display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 15px; align-items: center;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">합계 중량</div>
+                                        <div style="font-size: 1.2em; font-weight: 700; color: #333;">
+                                            <span id="totalWeight_${idx}">0.00</span> kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 허용 중량 범위 -->
+                                    <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
+                                        <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
+                                        <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
+                                            ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 판정 버튼 -->
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <button type="button"
+                                                class="btn"
+                                                onclick="judgeMaterialWeight(${idx})"
+                                                id="judgeBtn_${idx}"
+                                                disabled
+                                                style="padding: 10px 16px; font-size: 0.95em; background: #FF9800; color: white; border: none; min-width: 80px; opacity: 0.5;">
+                                            🔍 판정
+                                        </button>
+                                        <div id="judgeResult_${idx}" style="font-weight: 700; font-size: 1em; min-width: 70px; text-align: center;">
+                                        </div>
+                                    </div>
+
+                                    <!-- 완료 버튼 -->
+                                    <div>
+                                        <button type="button" class="btn" onclick="completeMaterialInput(${idx})"
+                                                id="completeMaterialBtn_${idx}" disabled style="opacity: 0.5; width: 100%;">
+                                            ✓ 이 분말 투입 완료
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -5422,8 +5453,6 @@ function t(key) {
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
             const materialRow = document.getElementById(`materialRow_${materialIndex}`);
             const isMain = materialRow.dataset.isMain === 'true';
-            const minWeight = parseFloat(materialRow.dataset.minWeight);
-            const maxWeight = parseFloat(materialRow.dataset.maxWeight);
 
             // Main 분말은 선택 입력, 일반 분말은 숫자 입력
             let weightInputHtml = '';
@@ -5432,7 +5461,7 @@ function t(key) {
                     <select id="weightInput_${materialIndex}_${lotIndex}"
                             class="auto-input-field weight-input"
                             style="width: 100%; padding: 8px;"
-                            onchange="checkLotJudgment(${materialIndex}, ${lotIndex})">
+                            onchange="updateTotalWeight(${materialIndex})">
                         <option value="">선택하세요</option>
                         <option value="1000">1 ton (1,000 kg)</option>
                         <option value="2000">2 ton (2,000 kg)</option>
@@ -5448,7 +5477,8 @@ function t(key) {
                            class="auto-input-field weight-input"
                            step="0.01"
                            style="width: 100%; padding: 8px;"
-                           placeholder="중량계 또는 수동입력">
+                           placeholder="중량계 또는 수동입력"
+                           oninput="updateTotalWeight(${materialIndex})">
                 `;
             }
 
@@ -5467,19 +5497,6 @@ function t(key) {
                 </td>
                 <td style="padding: 10px; text-align: center;">
                     <button type="button"
-                            class="btn"
-                            onclick="judgeLotWeight(${materialIndex}, ${lotIndex})"
-                            id="judgeBtn_${materialIndex}_${lotIndex}"
-                            style="padding: 8px 12px; font-size: 0.9em; background: #FF9800; color: white; border: none;">
-                        🔍 판정
-                    </button>
-                </td>
-                <td style="padding: 10px; text-align: center;">
-                    <div id="judgeResult_${materialIndex}_${lotIndex}" style="font-weight: 700; font-size: 0.95em;">
-                    </div>
-                </td>
-                <td style="padding: 10px; text-align: center;">
-                    <button type="button"
                             class="btn secondary"
                             onclick="removeLotRow(${materialIndex}, ${lotIndex})"
                             style="padding: 6px 12px; font-size: 0.85em; background: #f44336; color: white;">
@@ -5495,8 +5512,60 @@ function t(key) {
                 document.getElementById(`lotInput_${materialIndex}_${lotIndex}`).focus();
             }, 100);
 
-            // 완료 버튼 상태 체크
-            checkMaterialCompletion(materialIndex);
+            // 합계 업데이트
+            updateTotalWeight(materialIndex);
+        }
+
+        // 합계 중량 업데이트
+        function updateTotalWeight(materialIndex) {
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            let total = 0;
+            let hasAllWeights = rows.length > 0;
+
+            rows.forEach(row => {
+                const weightInput = row.querySelector('[id^="weightInput_"]');
+                if (weightInput) {
+                    const weight = parseFloat(weightInput.value);
+                    if (weight && weight > 0) {
+                        total += weight;
+                    } else {
+                        hasAllWeights = false;
+                    }
+                }
+            });
+
+            // 합계 중량 표시
+            const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
+            if (totalWeightSpan) {
+                totalWeightSpan.textContent = total.toFixed(2);
+            }
+
+            // 판정 버튼 활성화 여부
+            const judgeBtn = document.getElementById(`judgeBtn_${materialIndex}`);
+            if (judgeBtn) {
+                if (hasAllWeights && total > 0) {
+                    judgeBtn.disabled = false;
+                    judgeBtn.style.opacity = '1';
+                } else {
+                    judgeBtn.disabled = true;
+                    judgeBtn.style.opacity = '0.5';
+                }
+            }
+
+            // 판정 결과 초기화
+            const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
+            if (judgeResult) {
+                judgeResult.innerHTML = '';
+                judgeResult.dataset.result = '';
+            }
+
+            // 완료 버튼 비활성화
+            const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
+            if (completeBtn) {
+                completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.5';
+            }
         }
 
         // LOT 행 삭제
@@ -5506,97 +5575,72 @@ function t(key) {
                 if (row) {
                     row.remove();
                 }
-                checkMaterialCompletion(materialIndex);
+                updateTotalWeight(materialIndex);
             }
         }
 
-        // LOT 중량 판정
-        function judgeLotWeight(materialIndex, lotIndex) {
-            const lotInput = document.getElementById(`lotInput_${materialIndex}_${lotIndex}`);
-            const weightInput = document.getElementById(`weightInput_${materialIndex}_${lotIndex}`);
-            const judgeResult = document.getElementById(`judgeResult_${materialIndex}_${lotIndex}`);
+        // 분말 합계 중량 판정
+        function judgeMaterialWeight(materialIndex) {
             const materialRow = document.getElementById(`materialRow_${materialIndex}`);
+            const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
+            const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
+            const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
 
-            const lotNumber = lotInput.value.trim();
-            const weight = parseFloat(weightInput.value);
+            const totalWeight = parseFloat(totalWeightSpan.textContent);
             const minWeight = parseFloat(materialRow.dataset.minWeight);
             const maxWeight = parseFloat(materialRow.dataset.maxWeight);
 
-            // LOT 번호 확인
-            if (!lotNumber) {
-                alert('LOT 번호를 먼저 입력해주세요.');
-                lotInput.focus();
-                return;
-            }
+            // 모든 LOT 번호가 입력되었는지 확인
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            let allLotsHaveNumbers = true;
 
-            // 중량 확인
-            if (!weight || weight <= 0) {
-                alert('계량 중량을 입력해주세요.');
-                weightInput.focus();
+            rows.forEach(row => {
+                const lotInput = row.querySelector('[id^="lotInput_"]');
+                if (!lotInput || !lotInput.value.trim()) {
+                    allLotsHaveNumbers = false;
+                }
+            });
+
+            if (!allLotsHaveNumbers) {
+                alert('모든 LOT 번호를 입력해주세요.');
                 return;
             }
 
             // 합부 판정
-            if (weight >= minWeight && weight <= maxWeight) {
+            if (totalWeight >= minWeight && totalWeight <= maxWeight) {
                 // 합격
                 judgeResult.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">⭕ 합격</span>';
                 judgeResult.dataset.result = 'pass';
+                completeBtn.disabled = false;
+                completeBtn.style.opacity = '1';
 
-                // 입력 필드 비활성화
-                lotInput.disabled = true;
-                weightInput.disabled = true;
-                document.getElementById(`judgeBtn_${materialIndex}_${lotIndex}`).disabled = true;
+                // 모든 입력 필드 비활성화
+                rows.forEach(row => {
+                    const lotInput = row.querySelector('[id^="lotInput_"]');
+                    const weightInput = row.querySelector('[id^="weightInput_"]');
+                    if (lotInput) lotInput.disabled = true;
+                    if (weightInput) weightInput.disabled = true;
+                });
+
+                // LOT 추가 및 판정 버튼 비활성화
+                document.getElementById(`addLotBtn_${materialIndex}`).disabled = true;
+                document.getElementById(`judgeBtn_${materialIndex}`).disabled = true;
             } else {
                 // 불합격
                 judgeResult.innerHTML = '<span style="color: #F44336; font-size: 1.1em;">❌ 불합격</span>';
                 judgeResult.dataset.result = 'fail';
+                completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.5';
 
                 // 불합격 사유 표시
                 let reason = '';
-                if (weight < minWeight) {
-                    reason = `중량 부족 (${(minWeight - weight).toFixed(2)} kg 부족)`;
+                if (totalWeight < minWeight) {
+                    reason = `중량 부족 (${(minWeight - totalWeight).toFixed(2)} kg 부족)`;
                 } else {
-                    reason = `중량 초과 (+${(weight - maxWeight).toFixed(2)} kg 초과)`;
+                    reason = `중량 초과 (+${(totalWeight - maxWeight).toFixed(2)} kg 초과)`;
                 }
-                alert(`불합격: ${reason}\n허용 범위: ${minWeight.toFixed(2)} ~ ${maxWeight.toFixed(2)} kg`);
-            }
-
-            // 완료 버튼 상태 체크
-            checkMaterialCompletion(materialIndex);
-        }
-
-        // Main 분말 선택 시 자동 판정
-        function checkLotJudgment(materialIndex, lotIndex) {
-            judgeLotWeight(materialIndex, lotIndex);
-        }
-
-        // 분말 완료 가능 여부 체크
-        function checkMaterialCompletion(materialIndex) {
-            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
-            const rows = tableBody.querySelectorAll('tr');
-            const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
-
-            if (rows.length === 0) {
-                completeBtn.disabled = true;
-                completeBtn.style.opacity = '0.5';
-                return;
-            }
-
-            // 모든 LOT가 합격 판정을 받았는지 확인
-            let allPassed = true;
-            rows.forEach(row => {
-                const judgeResult = row.querySelector('[id^="judgeResult_"]');
-                if (!judgeResult || judgeResult.dataset.result !== 'pass') {
-                    allPassed = false;
-                }
-            });
-
-            if (allPassed && rows.length > 0) {
-                completeBtn.disabled = false;
-                completeBtn.style.opacity = '1';
-            } else {
-                completeBtn.disabled = true;
-                completeBtn.style.opacity = '0.5';
+                alert(`불합격: ${reason}\n허용 범위: ${minWeight.toFixed(2)} ~ ${maxWeight.toFixed(2)} kg\n합계 중량: ${totalWeight.toFixed(2)} kg`);
             }
         }
 
