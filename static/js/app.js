@@ -1492,27 +1492,29 @@ function t(key) {
 
                 // 입도분석 상세 정보 (활성화된 경우)
                 if (spec.particle_size_type && spec.particle_size_type !== '비활성') {
-                    html += `<div style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
-                    html += `<h5 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.95em; font-weight: 600;">📊 입도분석 상세</h5>`;
-                    html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
+                    // particle_size 테이블에서 데이터 가져오기
+                    try {
+                        const particleResponse = await fetch(`${API_BASE}/api/particle-size-spec/${spec.powder_name}`);
+                        const particleData = await particleResponse.json();
 
-                    const particles = [
-                        { label: '+180 um', min: spec.particle_180_min, max: spec.particle_180_max },
-                        { label: '+150 um', min: spec.particle_150_min, max: spec.particle_150_max },
-                        { label: '+106 um', min: spec.particle_106_min, max: spec.particle_106_max },
-                        { label: '+75 um', min: spec.particle_75_min, max: spec.particle_75_max },
-                        { label: '+45 um', min: spec.particle_45_min, max: spec.particle_45_max },
-                        { label: '-45 um', min: spec.particle_45m_min, max: spec.particle_45m_max }
-                    ];
+                        if (particleData.success && particleData.data.length > 0) {
+                            html += `<div style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
+                            html += `<h5 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.95em; font-weight: 600;">📊 입도분석 상세</h5>`;
+                            html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
 
-                    particles.forEach(p => {
-                        html += `<div style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
-                        html += `<strong style="font-weight: 600;">${p.label}</strong>: ${p.min || '-'} ~ ${p.max || '-'} %`;
-                        html += `</div>`;
-                    });
+                            // particle_size 테이블 데이터를 순회하며 표시
+                            particleData.data.forEach(p => {
+                                html += `<div style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
+                                html += `<strong style="font-weight: 600;">${p.mesh_size}</strong>: ${p.min_value || '-'} ~ ${p.max_value || '-'} %`;
+                                html += `</div>`;
+                            });
 
-                    html += `</div>`;
-                    html += `</div>`;
+                            html += `</div>`;
+                            html += `</div>`;
+                        }
+                    } catch (err) {
+                        console.error('입도분석 데이터 로딩 실패:', err);
+                    }
                 }
 
                 detailDiv.innerHTML = html;
