@@ -2998,21 +2998,41 @@ def get_blending_orders():
     """배합작업지시서 목록 조회"""
     try:
         status_filter = request.args.get('status', 'all')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            if status_filter == 'all':
+            # 기본 WHERE 조건 구성
+            where_clauses = []
+            params = []
+
+            if status_filter != 'all':
+                where_clauses.append('status = ?')
+                params.append(status_filter)
+
+            if date_from:
+                where_clauses.append('created_date >= ?')
+                params.append(date_from)
+
+            if date_to:
+                where_clauses.append('created_date <= ?')
+                params.append(date_to)
+
+            # SQL 쿼리 구성
+            if where_clauses:
+                where_sql = 'WHERE ' + ' AND '.join(where_clauses)
+                cursor.execute(f'''
+                    SELECT * FROM blending_order
+                    {where_sql}
+                    ORDER BY created_date ASC, id ASC
+                ''', params)
+            else:
                 cursor.execute('''
                     SELECT * FROM blending_order
                     ORDER BY created_date ASC, id ASC
                 ''')
-            else:
-                cursor.execute('''
-                    SELECT * FROM blending_order
-                    WHERE status = ?
-                    ORDER BY created_date ASC, id ASC
-                ''', (status_filter,))
 
             rows = cursor.fetchall()
             orders = []

@@ -4556,7 +4556,6 @@ function t(key) {
                 const productName = document.getElementById('orderProductName').value;
                 const totalWeight = document.getElementById('orderTotalWeight').value;
                 const createdBy = document.getElementById('orderCreatedBy').value;
-                const notes = document.getElementById('orderNotes').value;
                 const workDate = document.getElementById('orderDate') ? document.getElementById('orderDate').value : null;
 
                 if (!productName || !totalWeight) {
@@ -4572,7 +4571,6 @@ function t(key) {
                             product_name: productName,
                             total_target_weight: parseFloat(totalWeight),
                             created_by: createdBy || '미지정',
-                            notes: notes,
                             work_date: workDate || null
                         })
                     });
@@ -4597,7 +4595,14 @@ function t(key) {
         async function loadBlendingOrders() {
             try {
                 const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
-                const response = await fetch(`${API_BASE}/api/blending-orders?status=${statusFilter}`);
+                const dateFrom = document.getElementById('orderDateFrom')?.value || '';
+                const dateTo = document.getElementById('orderDateTo')?.value || '';
+
+                let url = `${API_BASE}/api/blending-orders?status=${statusFilter}`;
+                if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+                if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+
+                const response = await fetch(url);
                 const data = await response.json();
 
                 const container = document.getElementById('blendingOrdersList');
@@ -4669,6 +4674,18 @@ function t(key) {
                     container.innerHTML = '<div class="empty-message">작업지시서 목록을 불러올 수 없습니다.</div>';
                 }
             }
+        }
+
+        function resetOrderFilters() {
+            const statusEl = document.getElementById('orderStatusFilter');
+            const dateFromEl = document.getElementById('orderDateFrom');
+            const dateToEl = document.getElementById('orderDateTo');
+
+            if (statusEl) statusEl.value = 'in_progress';
+            if (dateFromEl) dateFromEl.value = '';
+            if (dateToEl) dateToEl.value = '';
+
+            loadBlendingOrders();
         }
 
         // 배합 페이지에서 작업 시작을 위해 간단히 작업지시서 목록을 렌더링
