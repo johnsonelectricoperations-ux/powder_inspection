@@ -663,7 +663,7 @@ function t(key) {
                     `;
                 });
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 20px;\"><button class="btn" onclick="judgeParticleSize('${item.name}')" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveParticleSize('${item.name}')" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 20px;\"><button class="btn" onclick="judgeParticleSize('${item.name}')" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveParticleSize('${item.name}')" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
 
@@ -698,7 +698,7 @@ function t(key) {
                     `;
                 }
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', true)" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', true)" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', true)" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', true)" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
 
@@ -714,7 +714,7 @@ function t(key) {
                     `;
                 }
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', false)" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', false)" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', false)" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', false)" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
             }
@@ -3443,7 +3443,7 @@ function t(key) {
                             <button onclick="judgeWeight('${recipe.id}', ${targetWeight}, ${tolerancePercent})"
                                 id="judge-${recipe.id}"
                                 disabled
-                                style="background: #2196F3; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
+                                style="background: #FF9800; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
                                 판정
                             </button>
                             <div id="judgement-${recipe.id}" style="margin-top: 5px; font-weight: 600;"></div>
@@ -3462,7 +3462,7 @@ function t(key) {
                             <button onclick="saveMaterialInput('${recipe.id}', '${recipe.powder_name}', ${targetWeight}, ${tolerancePercent}, '${recipe.powder_category}')"
                                 id="save-${recipe.id}"
                                 disabled
-                                style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
+                                style="background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
                                 저장
                             </button>
                             <div id="status-${recipe.id}" style="margin-top: 5px; font-size: 0.9em;"></div>
