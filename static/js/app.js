@@ -4840,23 +4840,9 @@ function t(key) {
                     workOrderInput.style.background = '#f0f0f0';
                 }
 
-                // 목표중량 설정 (작업지시서에 값이 있는 경우에만 설정)
+                // 목표중량은 항상 기본값(선택하세요)으로 설정
                 const targetSelect = document.getElementById('blendingTargetWeight');
-                if (targetSelect && order.total_target_weight) {
-                    const val = order.total_target_weight;
-                    let optExists = false;
-                    for (let opt of targetSelect.options) {
-                        if (String(opt.value) === String(val)) { optExists = true; break; }
-                    }
-                    if (!optExists) {
-                        const opt = document.createElement('option');
-                        opt.value = val;
-                        opt.text = formatNumber(val) + ' kg';
-                        targetSelect.prepend(opt);
-                    }
-                    targetSelect.value = val;
-                } else if (targetSelect) {
-                    // 작업지시서에 값이 없으면 기본값(선택하세요)으로 설정
+                if (targetSelect) {
                     targetSelect.value = '';
                 }
 
