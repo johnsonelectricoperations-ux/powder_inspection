@@ -3957,7 +3957,7 @@ function t(key) {
                 if (labelList && labelList.children.length === 0) {
                     // 완료된 작업의 라벨 재생성
                     if (currentBlendingWork && currentBlendingWork.status === 'completed') {
-                        renderLabels(currentBlendingWork.product_name, currentBlendingWork.batch_lot, currentMaterialInputs);
+                        renderLabelPanel(currentBlendingWork);
                     }
                 }
             }
