@@ -262,8 +262,9 @@ function t(key) {
             hidePowderForm();
 
             // 탭 버튼 처리 (active 토글)
-            document.getElementById('adminTabIncoming').classList.remove('active');
-            document.getElementById('adminTabMixing').classList.remove('active');
+            // 먼저 모든 admin-tab 버튼의 active 클래스 제거
+            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+            // 그 다음 선택된 탭만 active 추가
             if (mode === 'incoming') document.getElementById('adminTabIncoming').classList.add('active');
             else document.getElementById('adminTabMixing').classList.add('active');
 
