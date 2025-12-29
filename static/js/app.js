@@ -1934,7 +1934,7 @@ function t(key) {
 
                     alert('저장되었습니다.');
                     hidePowderForm();
-                    loadPowderSpecs();
+                    loadPowderSpecs(powderSpecMode);
                     loadParticlePowderList();
                     // 검사 페이지의 분말 목록도 갱신
                     loadPowderList('incoming');
@@ -1960,7 +1960,7 @@ function t(key) {
 
                 if (data.success) {
                     alert('삭제되었습니다.');
-                    loadPowderSpecs();
+                    loadPowderSpecs(powderSpecMode);
                     loadParticlePowderList();
                 } else {
                     alert('삭제 실패: ' + data.message);
