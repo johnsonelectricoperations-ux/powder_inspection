@@ -3464,10 +3464,10 @@ function t(key) {
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">분말명</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">LOT 번호</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">목표중량<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최소<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최대<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">계량중량<br>(kg)</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">목표중량</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최소</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최대</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">계량중량</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">판정</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">상태</th>
                         </tr>
@@ -3509,8 +3509,22 @@ function t(key) {
                     }
                 }
 
-                const minWeight = (targetWeight * (1 - tolerancePercent / 100)).toFixed(2);
-                const maxWeight = (targetWeight * (1 + tolerancePercent / 100)).toFixed(2);
+                const minWeightKg = targetWeight * (1 - tolerancePercent / 100);
+                const maxWeightKg = targetWeight * (1 + tolerancePercent / 100);
+
+                // 단위 변환: Main은 ton, 기타는 g
+                let displayTarget, displayMin, displayMax, unitLabel;
+                if (recipe.is_main) {
+                    displayTarget = Math.round(targetWeight / 1000); // ton, 소수점 없음
+                    displayMin = Math.round(minWeightKg / 1000);
+                    displayMax = Math.round(maxWeightKg / 1000);
+                    unitLabel = 'ton';
+                } else {
+                    displayTarget = Math.round(targetWeight * 1000); // g, 소수점 없음
+                    displayMin = Math.round(minWeightKg * 1000);
+                    displayMax = Math.round(maxWeightKg * 1000);
+                    unitLabel = 'g';
+                }
 
                 const rowBg = isCompleted ? '#f0f8f0' : '#ffffff';
 
@@ -3547,17 +3561,23 @@ function t(key) {
                 }
 
                 // 목표중량
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(targetWeight.toFixed(2))}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
 
                 // 허용최소
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(minWeight)}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(displayMin)} ${unitLabel}</td>`;
 
                 // 허용최대
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(maxWeight)}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(displayMax)} ${unitLabel}</td>`;
 
                 // 계량중량 (Main 분말: 1~5ton 선택, 다른 분말: 최대 2개 입력)
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(existingInput.actual_weight)}</td>`;
+                    let displayActual;
+                    if (recipe.is_main) {
+                        displayActual = Math.round(existingInput.actual_weight / 1000); // ton
+                    } else {
+                        displayActual = Math.round(existingInput.actual_weight * 1000); // g
+                    }
+                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayActual)} ${unitLabel}</td>`;
                 } else if (recipe.is_main) {
                     // Main 분말: 1~5ton 선택 (배합 작업 시 설정한 중량으로 초기화)
                     const mainWeight = currentBlendingWork.main_powder_weights && currentBlendingWork.main_powder_weights[recipe.powder_name]
@@ -3592,16 +3612,16 @@ function t(key) {
                         </td>
                     `;
                 } else {
-                    // 다른 분말: 기존 방식 (최대 2개 입력)
+                    // 다른 분말: g 단위로 입력 (소수점 없음)
                     html += `
                         <td style="padding: 15px; border: 1px solid #ddd;">
-                            <input type="number" step="0.1" id="weight-${recipe.id}-1"
+                            <input type="number" step="1" id="weight-${recipe.id}-1"
                                 onchange="checkWeightJudgement('${recipe.id}')"
-                                placeholder="중량1 (kg)"
+                                placeholder="중량1 (g)"
                                 style="width:100%; padding: 8px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 5px; text-align: center; margin-bottom:4px;">
-                            <input type="number" step="0.1" id="weight-${recipe.id}-2"
+                            <input type="number" step="1" id="weight-${recipe.id}-2"
                                 style="width:100%; padding: 8px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 5px; text-align: center; display:none;"
-                                placeholder="중량2 (kg)"
+                                placeholder="중량2 (g)"
                                 onchange="checkWeightJudgement('${recipe.id}')">
                         </td>
                     `;
@@ -3788,6 +3808,10 @@ function t(key) {
 
         // 판정 버튼 클릭 시 적정/부적정 판단
         function judgeWeight(recipeId, targetWeight, tolerancePercent) {
+                    // Find recipe to check if it's main
+                    const recipe = currentBlendingRecipes.find(r => r.id == recipeId);
+                    const isMain = recipe ? recipe.is_main : false;
+
                     const weight1 = parseFloat(document.getElementById(`weight-${recipeId}-1`)?.value || 0);
                     const weight2 = parseFloat(document.getElementById(`weight-${recipeId}-2`)?.value || 0);
                     const judgementDiv = document.getElementById(`judgement-${recipeId}`);
@@ -3795,18 +3819,27 @@ function t(key) {
                     const lot1 = document.getElementById(`lot-${recipeId}-1`);
                     const lot2 = document.getElementById(`lot-${recipeId}-2`);
 
-                    const actualWeight = (isNaN(weight1) ? 0 : weight1) + (isNaN(weight2) ? 0 : weight2);
-                    if (!actualWeight || actualWeight <= 0) {
+                    // 입력된 중량 (Main: ton → kg 변환, 기타: g → kg 변환)
+                    let actualWeightKg;
+                    if (isMain) {
+                        // ton → kg (1 ton = 1000 kg)
+                        actualWeightKg = (weight1 * 1000) + (weight2 * 1000);
+                    } else {
+                        // g → kg (1000 g = 1 kg)
+                        actualWeightKg = (weight1 / 1000) + (weight2 / 1000);
+                    }
+
+                    if (!actualWeightKg || actualWeightKg <= 0) {
                         alert('계량중량을 입력해주세요.');
                         return;
                     }
 
-                    // 허용 범위 계산 (합산 기준)
+                    // 허용 범위 계산 (kg 기준)
                     const minWeight = targetWeight * (1 - tolerancePercent / 100);
                     const maxWeight = targetWeight * (1 + tolerancePercent / 100);
 
                     // 판정
-                    const isValid = actualWeight >= minWeight && actualWeight <= maxWeight;
+                    const isValid = actualWeightKg >= minWeight && actualWeightKg <= maxWeight;
 
                     if (isValid) {
                         judgementDiv.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">✓ 적정</span>';
@@ -3817,12 +3850,26 @@ function t(key) {
                             if (saveBtn) saveBtn.disabled = false;
                         }
                     } else {
-                        const deviation = ((actualWeight - targetWeight) / targetWeight * 100).toFixed(2);
+                        const deviation = ((actualWeightKg - targetWeight) / targetWeight * 100).toFixed(2);
                         judgementDiv.innerHTML = `<span style="color: #f44336; font-size: 1.1em;">✗ 부적정<br>(${deviation > 0 ? '+' : ''}${deviation}%)</span>`;
                         judgementDiv.setAttribute('data-judgement', 'fail');
                         if (saveBtn) saveBtn.disabled = true;
 
-                        alert(`⚠️ 허용범위를 벗어났습니다.\n허용범위: ${formatNumber(minWeight.toFixed(2))} ~ ${formatNumber(maxWeight.toFixed(2))} kg\n입력값(합계): ${formatNumber(actualWeight)} kg`);
+                        // 허용범위 표시 단위 변환
+                        let minDisplay, maxDisplay, actualDisplay, unit;
+                        if (isMain) {
+                            minDisplay = Math.round(minWeight / 1000);
+                            maxDisplay = Math.round(maxWeight / 1000);
+                            actualDisplay = Math.round(actualWeightKg / 1000);
+                            unit = 'ton';
+                        } else {
+                            minDisplay = Math.round(minWeight * 1000);
+                            maxDisplay = Math.round(maxWeight * 1000);
+                            actualDisplay = Math.round(actualWeightKg * 1000);
+                            unit = 'g';
+                        }
+
+                        alert(`⚠️ 허용범위를 벗어났습니다.\n허용범위: ${formatNumber(minDisplay)} ~ ${formatNumber(maxDisplay)} ${unit}\n입력값(합계): ${formatNumber(actualDisplay)} ${unit}`);
                     }
         }
 
@@ -3883,14 +3930,28 @@ function t(key) {
         }
 
         async function saveMaterialInput(recipeId, powderName, targetWeight, tolerancePercent, powderCategory) {
+            // Find recipe to check if it's main
+            const recipe = currentBlendingRecipes.find(r => r.id == recipeId);
+            const isMain = recipe ? recipe.is_main : false;
+
             const lot1 = document.getElementById(`lot-${recipeId}-1`)?.value.trim() || '';
             const lot2 = document.getElementById(`lot-${recipeId}-2`)?.value.trim() || '';
             const w1 = parseFloat(document.getElementById(`weight-${recipeId}-1`)?.value || 0);
             const w2 = parseFloat(document.getElementById(`weight-${recipeId}-2`)?.value || 0);
-            const actualWeightNum = (isNaN(w1) ? 0 : w1) + (isNaN(w2) ? 0 : w2);
+
+            // 입력된 중량을 kg로 변환
+            let actualWeightKg;
+            if (isMain) {
+                // ton → kg
+                actualWeightKg = (w1 * 1000) + (w2 * 1000);
+            } else {
+                // g → kg
+                actualWeightKg = (w1 / 1000) + (w2 / 1000);
+            }
+
             const judgementDiv = document.getElementById(`judgement-${recipeId}`);
 
-            if ((!lot1 && !lot2) || !actualWeightNum) {
+            if ((!lot1 && !lot2) || !actualWeightKg) {
                 alert('LOT 번호과 실제 중량(최소 1개)은 모두 입력하세요.');
                 return;
             }
@@ -3904,12 +3965,25 @@ function t(key) {
                 }
             }
 
-            // 허용 범위 재확인
+            // 허용 범위 재확인 (kg 기준)
             const minWeight = targetWeight * (1 - tolerancePercent / 100);
             const maxWeight = targetWeight * (1 + tolerancePercent / 100);
 
-            if (actualWeightNum < minWeight || actualWeightNum > maxWeight) {
-                alert(`⚠️ 부적정(NG) 판정된 원재료는 저장할 수 없습니다.\n\n허용범위: ${formatNumber(minWeight.toFixed(2))} ~ ${formatNumber(maxWeight.toFixed(2))} kg\n입력값(합계): ${formatNumber(actualWeightNum)} kg\n\n적정 범위 내로 다시 계량해주세요.`);
+            if (actualWeightKg < minWeight || actualWeightKg > maxWeight) {
+                // 허용범위 표시 단위 변환
+                let minDisplay, maxDisplay, actualDisplay, unit;
+                if (isMain) {
+                    minDisplay = Math.round(minWeight / 1000);
+                    maxDisplay = Math.round(maxWeight / 1000);
+                    actualDisplay = Math.round(actualWeightKg / 1000);
+                    unit = 'ton';
+                } else {
+                    minDisplay = Math.round(minWeight * 1000);
+                    maxDisplay = Math.round(maxWeight * 1000);
+                    actualDisplay = Math.round(actualWeightKg * 1000);
+                    unit = 'g';
+                }
+                alert(`⚠️ 부적정(NG) 판정된 원재료는 저장할 수 없습니다.\n\n허용범위: ${formatNumber(minDisplay)} ~ ${formatNumber(maxDisplay)} ${unit}\n입력값(합계): ${formatNumber(actualDisplay)} ${unit}\n\n적정 범위 내로 다시 계량해주세요.`);
                 return;
             }
 
@@ -3926,7 +4000,7 @@ function t(key) {
                         powder_category: powderCategory,
                         material_lot: materialLot,
                         target_weight: targetWeight,
-                        actual_weight: actualWeightNum,
+                        actual_weight: actualWeightKg,
                         tolerance_percent: tolerancePercent,
                         operator: currentBlendingWork.operator
                     })
