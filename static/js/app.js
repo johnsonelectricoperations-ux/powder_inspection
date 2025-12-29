@@ -4814,10 +4814,10 @@ function t(key) {
                     workOrderInput.style.background = '#f0f0f0';
                 }
 
-                // 목표중량 설정 (select에 없으면 임시 option 추가)
+                // 목표중량 설정 (작업지시서에 값이 있는 경우에만 설정)
                 const targetSelect = document.getElementById('blendingTargetWeight');
-                if (targetSelect) {
-                    const val = order.total_target_weight || 5000; // 기본값 5000kg
+                if (targetSelect && order.total_target_weight) {
+                    const val = order.total_target_weight;
                     let optExists = false;
                     for (let opt of targetSelect.options) {
                         if (String(opt.value) === String(val)) { optExists = true; break; }
@@ -4829,6 +4829,9 @@ function t(key) {
                         targetSelect.prepend(opt);
                     }
                     targetSelect.value = val;
+                } else if (targetSelect) {
+                    // 작업지시서에 값이 없으면 기본값(선택하세요)으로 설정
+                    targetSelect.value = '';
                 }
 
                 // operator 비워두기 (사용자가 선택)
