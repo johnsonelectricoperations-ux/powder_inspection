@@ -218,17 +218,22 @@
         <!-- 배합 작업 페이지 -->
         <div id="blending" class="page">
             <div class="page-header">
-                <h2 data-i18n="blendingTitle">배합 작업 지시</h2>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 data-i18n="blendingTitle">배합 작업 지시</h2>
+                    <button id="backToOrderListBtn" class="btn secondary" onclick="showOrderListView()" style="display: none; padding: 8px 16px;">
+                        ← 작업지시서목록으로 돌아가기
+                    </button>
+                </div>
                 <p data-i18n="blendingDesc">제품 Recipe를 선택하고 배합 작업을 시작합니다</p>
             </div>
             <!-- 작업지시서 목록 (이 화면에서 작업시작 가능) -->
-            <div class="card">
+            <div class="card" id="blendingOrderListCard">
                 <h3 data-i18n="blendingOrderList">작업지시서 목록</h3>
                 <div id="blendingOrdersForBlending" class="scrollable-list">로딩 중...</div>
             </div>
 
             <!-- 진행중인 배합작업 목록 -->
-            <div class="card">
+            <div class="card" id="inProgressWorksCard">
                 <h3>진행중인 배합작업</h3>
                 <div class="scrollable-table-container">
                     <table class="data-table">

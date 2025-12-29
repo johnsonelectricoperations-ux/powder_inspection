@@ -2858,11 +2858,37 @@ function t(key) {
         function hideBlendingForm() {
             const card = document.getElementById('blendingFormCard');
             if (card) card.style.display = 'none';
+
+            // 목록 카드들 다시 표시
+            const orderListCard = document.getElementById('blendingOrderListCard');
+            const inProgressCard = document.getElementById('inProgressWorksCard');
+            const backBtn = document.getElementById('backToOrderListBtn');
+
+            if (orderListCard) orderListCard.style.display = 'block';
+            if (inProgressCard) inProgressCard.style.display = 'block';
+            if (backBtn) backBtn.style.display = 'none';
         }
 
         function showBlendingForm() {
             const card = document.getElementById('blendingFormCard');
             if (card) card.style.display = 'block';
+
+            // 목록 카드들 숨기기
+            const orderListCard = document.getElementById('blendingOrderListCard');
+            const inProgressCard = document.getElementById('inProgressWorksCard');
+            const backBtn = document.getElementById('backToOrderListBtn');
+
+            if (orderListCard) orderListCard.style.display = 'none';
+            if (inProgressCard) inProgressCard.style.display = 'none';
+            if (backBtn) backBtn.style.display = 'block';
+        }
+
+        function showOrderListView() {
+            // 폼 숨기고 목록 표시
+            hideBlendingForm();
+            // 폼 초기화
+            const form = document.getElementById('blendingForm');
+            if (form) form.reset();
         }
 
         async function loadProductsForBlending() {
