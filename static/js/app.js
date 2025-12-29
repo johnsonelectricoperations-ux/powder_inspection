@@ -3540,7 +3540,7 @@ function t(key) {
                     <button class="btn" onclick="showBarcodePanel()" style="background:#2196F3; color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
                         🏷️ 바코드 라벨 인쇄
                     </button>
-                    <button class="btn secondary" onclick="showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                    <button class="btn secondary" onclick="hideLabelPanel(); showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
                         ${backButtonText}
                     </button>
                 `;
@@ -3554,7 +3554,7 @@ function t(key) {
                     <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" ${!canComplete ? 'disabled' : ''} style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
                         배합 작업 완료
                     </button>
-                    <button class="btn secondary" onclick="showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                    <button class="btn secondary" onclick="hideLabelPanel(); showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
                         ${backButtonText}
                     </button>
                 `;
