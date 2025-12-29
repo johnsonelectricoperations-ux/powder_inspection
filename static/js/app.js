@@ -3445,13 +3445,38 @@ function t(key) {
                 }
             });
 
-            // 완료 버튼 활성화 확인 - 모든 원재료가 투입되고 모두 적정 판정인 경우만
-            const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
-            const allValid = currentMaterialInputs.every(input => input.is_valid);
-            document.getElementById('completeBlendingBtn').disabled = !(allCompleted && allValid);
+            // 버튼 렌더링 - 작업 상태에 따라 다른 버튼 표시
+            const buttonsContainer = document.getElementById('materialInputButtons');
+            const workStatus = currentBlendingWork.status;
 
-            if (allCompleted && !allValid) {
-                alert('⚠️ 부적정 판정된 원재료가 있습니다. 모든 원재료가 적정 판정되어야 작업을 완료할 수 있습니다.');
+            if (workStatus === 'completed') {
+                // 완료된 작업 - 바코드 인쇄 및 조회화면으로 돌아가기 버튼
+                buttonsContainer.innerHTML = `
+                    <button class="btn" onclick="showBarcodePanel()" style="background:#2196F3; color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
+                        🏷️ 바코드 라벨 인쇄
+                    </button>
+                    <button class="btn secondary" onclick="showPage('blending-log')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ← 조회화면으로 돌아가기
+                    </button>
+                `;
+            } else {
+                // 진행중인 작업 - 배합 작업 완료 및 대시보드 버튼
+                const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
+                const allValid = currentMaterialInputs.every(input => input.is_valid);
+                const canComplete = allCompleted && allValid;
+
+                buttonsContainer.innerHTML = `
+                    <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" ${!canComplete ? 'disabled' : ''} style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
+                        배합 작업 완료
+                    </button>
+                    <button class="btn danger" onclick="showPage('dashboard')" style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
+                        대시보드로 돌아가기
+                    </button>
+                `;
+
+                if (allCompleted && !allValid) {
+                    alert('⚠️ 부적정 판정된 원재료가 있습니다. 모든 원재료가 적정 판정되어야 작업을 완료할 수 있습니다.');
+                }
             }
         }
 
@@ -3851,6 +3876,23 @@ function t(key) {
             // show panel
             panel.style.display = 'block';
             panel.setAttribute('aria-hidden', 'false');
+        }
+
+        function showBarcodePanel() {
+            const panel = document.getElementById('labelPanel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.setAttribute('aria-hidden', 'false');
+
+                // 라벨이 비어있으면 생성
+                const labelList = document.getElementById('labelList');
+                if (labelList && labelList.children.length === 0) {
+                    // 완료된 작업의 라벨 재생성
+                    if (currentBlendingWork && currentBlendingWork.status === 'completed') {
+                        renderLabels(currentBlendingWork.product_name, currentBlendingWork.batch_lot, currentMaterialInputs);
+                    }
+                }
+            }
         }
 
         function hideLabelPanel() {
