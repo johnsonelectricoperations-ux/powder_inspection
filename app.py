@@ -2999,13 +2999,13 @@ def get_blending_orders():
             if status_filter == 'all':
                 cursor.execute('''
                     SELECT * FROM blending_order
-                    ORDER BY created_date DESC, id DESC
+                    ORDER BY created_date ASC, id ASC
                 ''')
             else:
                 cursor.execute('''
                     SELECT * FROM blending_order
                     WHERE status = ?
-                    ORDER BY created_date DESC, id DESC
+                    ORDER BY created_date ASC, id ASC
                 ''', (status_filter,))
 
             rows = cursor.fetchall()
