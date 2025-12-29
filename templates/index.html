@@ -462,7 +462,7 @@
             <div class="card">
                 <div class="card-title" data-i18n="searchCondition">검색 조건</div>
                 <form id="searchForm" style="margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
                         <div class="form-group">
                             <label data-i18n="category">검사구분</label>
                             <select id="searchCategory">
@@ -481,8 +481,6 @@
                             <label data-i18n="lotNumberLabel">LOT 번호</label>
                             <input type="text" id="searchLotNumber" data-i18n-placeholder="lotNumberPlaceholder" placeholder="LOT 번호 입력">
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
                         <div class="form-group">
                             <label data-i18n="dateFrom">시작일</label>
                             <input type="date" id="searchDateFrom">
@@ -491,7 +489,7 @@
                             <label data-i18n="dateTo">종료일</label>
                             <input type="date" id="searchDateTo">
                         </div>
-                        <button type="submit" class="btn secondary" style="margin-bottom: 15px;" data-i18n="searchButton">조회</button>
+                        <button type="submit" class="btn secondary" style="margin-bottom: 15px; white-space: nowrap;" data-i18n="searchButton">조회</button>
                     </div>
                 </form>
             </div>
