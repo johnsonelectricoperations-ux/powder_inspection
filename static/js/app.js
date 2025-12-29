@@ -5410,9 +5410,9 @@ function t(key) {
 
                             <!-- 허용 중량 범위 표시 -->
                             <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
-                                <div style="font-size: 0.75em; color: #666; margin-bottom: 3px;">허용 중량 범위</div>
-                                <div style="font-weight: 600; color: #2196F3; font-size: 0.9em;">
-                                    ${parseFloat(material.minWeight).toLocaleString()} ~ ${parseFloat(material.maxWeight).toLocaleString()} kg
+                                <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
+                                <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
+                                    ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
                                 </div>
                             </div>
 
@@ -5424,16 +5424,16 @@ function t(key) {
                             </div>
 
                             <!-- 판정 버튼 및 결과 -->
-                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <div style="display: flex; gap: 10px; align-items: center;">
                                 <button type="button"
-                                        class="btn secondary"
+                                        class="btn"
                                         onclick="judgeMaterialWeight(${idx})"
                                         id="judgeBtn_${idx}"
                                         ${idx !== 0 ? 'disabled' : ''}
-                                        style="padding: 8px 12px; font-size: 0.9em;">
+                                        style="padding: 10px 16px; font-size: 0.95em; background: #FF9800; color: white; border: none; min-width: 80px;">
                                     🔍 판정
                                 </button>
-                                <div id="judgeResult_${idx}" style="text-align: center; font-weight: 600; font-size: 0.85em; min-height: 20px;">
+                                <div id="judgeResult_${idx}" style="font-weight: 700; font-size: 1em; min-width: 70px; text-align: center;">
                                 </div>
                             </div>
 
@@ -5506,13 +5506,13 @@ function t(key) {
             // 합부 판정
             if (weight >= minWeight && weight <= maxWeight) {
                 // 합격
-                judgeResult.innerHTML = '<span style="color: #4CAF50;">✓ 합격</span>';
+                judgeResult.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">⭕ 합격</span>';
                 judgeResult.dataset.result = 'pass';
                 saveBtn.disabled = false;
                 saveBtn.style.opacity = '1';
             } else {
                 // 불합격
-                judgeResult.innerHTML = '<span style="color: #F44336;">✗ 불합격</span>';
+                judgeResult.innerHTML = '<span style="color: #F44336; font-size: 1.1em;">❌ 불합격</span>';
                 judgeResult.dataset.result = 'fail';
                 saveBtn.disabled = true;
                 saveBtn.style.opacity = '0.5';
@@ -5524,7 +5524,7 @@ function t(key) {
                 } else {
                     reason = `중량 초과 (+${(weight - maxWeight).toFixed(2)} kg 초과)`;
                 }
-                alert(`불합격: ${reason}\n허용 범위: ${minWeight.toLocaleString()} ~ ${maxWeight.toLocaleString()} kg`);
+                alert(`불합격: ${reason}\n허용 범위: ${minWeight.toFixed(2)} ~ ${maxWeight.toFixed(2)} kg`);
             }
         }
 
