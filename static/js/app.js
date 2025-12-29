@@ -4716,13 +4716,10 @@ function t(key) {
             powderStatus: null
         };
 
-        // 대시보드 로드
+        // 대시보드 로드 (현재 비활성화 - 빈 화면)
         async function loadDashboard() {
-            await loadDashboardKPI();
-            await loadWorkProgressChart('week');
-            await loadQualityRateChart();
-            await loadDailyTrendChart();
-            await loadPowderStatusChart();
+            // 대시보드가 빈 화면이므로 로딩 건너뜀
+            return;
         }
 
         // KPI 카드 로드
