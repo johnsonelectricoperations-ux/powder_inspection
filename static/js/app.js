@@ -134,6 +134,15 @@ function t(key) {
                 return;
             }
 
+            // 바코드 라벨 패널 숨기기 (페이지 전환 시)
+            if (pageName !== 'material-input') {
+                const labelPanel = document.getElementById('labelPanel');
+                if (labelPanel) {
+                    labelPanel.style.display = 'none';
+                    labelPanel.setAttribute('aria-hidden', 'true');
+                }
+            }
+
             // 페이지 전환
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
@@ -3204,6 +3213,14 @@ function t(key) {
 
         async function loadMaterialInputPage(workId, sourcePage = 'blending') {
             materialInputSourcePage = sourcePage;
+
+            // 바코드 라벨 패널 초기화
+            hideLabelPanel();
+            const labelList = document.getElementById('labelList');
+            if (labelList) {
+                labelList.innerHTML = '';
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
                 const data = await response.json();
