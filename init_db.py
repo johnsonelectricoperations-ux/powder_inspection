@@ -227,6 +227,9 @@ def init_database():
         -- 검사 구분 (수입검사/배합검사)
         category VARCHAR(20) DEFAULT 'incoming',
 
+        -- 검사일
+        inspection_date DATE,
+
         UNIQUE(powder_name, lot_number)
     )
     ''')
@@ -246,6 +249,9 @@ def init_database():
 
         -- 검사 구분 (수입검사/배합검사)
         category VARCHAR(20) DEFAULT 'incoming',
+
+        -- 검사일
+        inspection_date DATE,
 
         UNIQUE(powder_name, lot_number)
     )

@@ -2783,8 +2783,11 @@ function t(key) {
                             <td>${startTime}</td>
                             <td>${progress}/${total} (${progressPercent}%)</td>
                             <td>
-                                <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending')" style="padding: 6px 12px; font-size: 0.9em; background:#4CAF50; color:white; border:none; border-radius:4px;">
+                                <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending')" style="padding: 6px 12px; font-size: 0.9em; background:#4CAF50; color:white; border:none; border-radius:4px; margin-right: 5px;">
                                     작업 계속
+                                </button>
+                                <button class="btn danger" onclick="deleteBlendingWork(${work.id})" style="padding: 6px 12px; font-size: 0.9em;">
+                                    삭제
                                 </button>
                             </td>
                         </tr>
@@ -2796,6 +2799,40 @@ function t(key) {
                 if (tbody) {
                     tbody.innerHTML = '<tr><td colspan="7" class="empty-message">오류 발생: ' + error.message + '</td></tr>';
                 }
+            }
+        }
+
+        // --------------------------------------------
+        // 진행중인 배합작업 삭제
+        // --------------------------------------------
+        async function deleteBlendingWork(workId) {
+            if (!confirm('이 배합작업을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) {
+                return;
+            }
+
+            const adminPassword = prompt('관리자 비밀번호를 입력하세요:');
+            if (!adminPassword) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/blending/work/${workId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: adminPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('배합작업이 삭제되었습니다.');
+                    await loadInProgressBlendingWorks(); // 목록 새로고침
+                } else {
+                    alert('삭제 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('배합작업 삭제 오류:', error);
+                alert('삭제 중 오류가 발생했습니다: ' + error.message);
             }
         }
 
@@ -4731,10 +4768,10 @@ function t(key) {
                             <td style="padding: 15px; text-align: center;">
                                 ${order.created_date}
                             </td>
-                            <td style="padding: 15px; text-align: center; font-weight: 600; font-size: 1.1em;">
+                            <td style="padding: 15px; text-align: center;">
                                 ${order.work_order_number}
                             </td>
-                            <td style="padding: 15px; text-align: center;">
+                            <td style="padding: 15px; text-align: center; font-weight: 600; font-size: 1.1em;">
                                 ${order.product_name}
                             </td>
                             <td style="padding: 15px; text-align: center; font-size: 1.1em; font-weight: 600;">
