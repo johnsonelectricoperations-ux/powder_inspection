@@ -1132,7 +1132,12 @@ function t(key) {
                                 <td>${item.inspection_time}</td>
                                 <td>${item.inspection_type}</td>
                                 <td><span class="badge ${badgeClass}">${item.final_result}</span></td>
-                                <td><button class="btn" onclick="viewDetail('${item.powder_name}', '${item.lot_number}')">${t('view')}</button></td>
+                                <td>
+                                    <div style="display: flex; gap: 5px;">
+                                        <button class="btn" onclick="viewDetail('${item.powder_name}', '${item.lot_number}')" style="padding: 6px 12px; font-size: 0.9em;">${t('view')}</button>
+                                        <button class="btn danger" onclick="deleteInspectionResult('${item.powder_name}', '${item.lot_number}', '${item.category}')" style="padding: 6px 12px; font-size: 0.9em; background:#f44336; color:white;">삭제</button>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     });
@@ -1158,6 +1163,35 @@ function t(key) {
                     showPage('detail');
                 } else {
                     alert('상세 정보 로딩 실패: ' + data.message);
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        async function deleteInspectionResult(powderName, lotNumber, category) {
+            // 관리자 비밀번호 확인
+            const password = prompt(`검사결과를 삭제하시겠습니까?\n분말명: ${powderName}\nLOT: ${lotNumber}\n\n관리자 비밀번호를 입력하세요:`);
+
+            if (!password) {
+                return; // 취소
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/inspection-result/${encodeURIComponent(powderName)}/${encodeURIComponent(lotNumber)}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: password, category: category })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('검사 결과가 삭제되었습니다.');
+                    // 검색 폼 다시 제출하여 목록 새로고침
+                    document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+                } else {
+                    alert('삭제 실패: ' + data.message);
                 }
             } catch (error) {
                 alert('오류: ' + error.message);
@@ -3974,9 +4008,14 @@ function t(key) {
                             <td>${endTime}</td>
                             <td>
                                 ${work.status === 'completed' ?
-                                    `<button class="btn" onclick="loadMaterialInputPage(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
-                                        입력현황
-                                    </button>` :
+                                    `<div style="display: flex; gap: 5px;">
+                                        <button class="btn" onclick="loadMaterialInputPage(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
+                                            입력현황
+                                        </button>
+                                        <button class="btn danger" onclick="deleteBlendingWork(${work.id}, '${work.batch_lot}')" style="padding: 6px 12px; font-size: 0.9em; background:#f44336; color:white; border:none; border-radius:4px;">
+                                            삭제
+                                        </button>
+                                    </div>` :
                                     `<div style="display: flex; gap: 5px;">
                                         <button class="btn" onclick="continueBlendingWork(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
                                             작업 계속
@@ -4020,14 +4059,18 @@ function t(key) {
         }
 
         async function deleteBlendingWork(workId, batchLot) {
-            // 진행중인 배합 작업 삭제
-            if (!confirm(`배합 LOT "${batchLot}"를 삭제하시겠습니까?\n\n이 작업과 관련된 모든 원재료 투입 데이터도 함께 삭제됩니다.`)) {
-                return;
+            // 관리자 비밀번호 확인
+            const password = prompt(`배합 LOT "${batchLot}"를 삭제하시겠습니까?\n\n관리자 비밀번호를 입력하세요:`);
+
+            if (!password) {
+                return; // 취소
             }
 
             try {
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: password })
                 });
 
                 const data = await response.json();

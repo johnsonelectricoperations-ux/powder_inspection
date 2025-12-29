@@ -724,6 +724,52 @@ def search_inspection_results():
         return jsonify({'success': False, 'message': str(e)})
 
 # ============================================
+# API: 검사 결과 삭제
+# ============================================
+
+@app.route('/api/inspection-result/<powder_name>/<lot_number>', methods=['DELETE'])
+def delete_inspection_result(powder_name, lot_number):
+    """검사 결과 삭제 (관리자 비밀번호 필요)"""
+    try:
+        # 관리자 비밀번호 확인
+        data = request.get_json() or {}
+        admin_password = data.get('adminPassword', '')
+        category = data.get('category', 'incoming')
+
+        if not check_admin_password(admin_password):
+            return jsonify({'success': False, 'message': '관리자 비밀번호가 일치하지 않습니다.'})
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 검사 결과 확인
+            cursor.execute('''
+                SELECT * FROM inspection_result
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (powder_name, lot_number, category))
+
+            result = cursor.fetchone()
+
+            if not result:
+                return jsonify({'success': False, 'message': '검사 결과를 찾을 수 없습니다.'})
+
+            # 검사 결과 삭제
+            cursor.execute('''
+                DELETE FROM inspection_result
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (powder_name, lot_number, category))
+
+            conn.commit()
+
+            return jsonify({
+                'success': True,
+                'message': f'검사 결과가 삭제되었습니다. (분말: {powder_name}, LOT: {lot_number})'
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
 # API: 검사 상세 조회
 # ============================================
 
@@ -2268,12 +2314,19 @@ def get_blending_work(work_id):
 
 @app.route('/api/blending/work/<int:work_id>', methods=['DELETE'])
 def delete_blending_work(work_id):
-    """배합 작업 삭제 (진행중인 작업만 삭제 가능)"""
+    """배합 작업 삭제 (관리자 비밀번호 필요)"""
     try:
+        # 관리자 비밀번호 확인
+        data = request.get_json() or {}
+        admin_password = data.get('adminPassword', '')
+
+        if not check_admin_password(admin_password):
+            return jsonify({'success': False, 'message': '관리자 비밀번호가 일치하지 않습니다.'})
+
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            # 작업 상태 확인
+            # 작업 정보 확인
             cursor.execute('''
                 SELECT status, batch_lot FROM blending_work WHERE id = ?
             ''', (work_id,))
@@ -2282,9 +2335,6 @@ def delete_blending_work(work_id):
 
             if not work:
                 return jsonify({'success': False, 'message': '배합 작업을 찾을 수 없습니다.'})
-
-            if work[0] == 'completed':
-                return jsonify({'success': False, 'message': '완료된 작업은 삭제할 수 없습니다.'})
 
             # 관련 원재료 투입 데이터 삭제
             cursor.execute('''
@@ -3137,6 +3187,30 @@ def get_blending_order_progress(order_id):
 # ============================================
 # 관리자 비밀번호 검증
 # ============================================
+
+def check_admin_password(password):
+    """관리자 비밀번호 확인 헬퍼 함수"""
+    import hashlib
+    import os
+
+    password_file = os.path.join(os.path.dirname(__file__), 'password.txt')
+
+    # 파일이 없으면 초기 비밀번호(1234) 생성
+    if not os.path.exists(password_file):
+        default_password = "1234"
+        hashed = hashlib.sha256(default_password.encode()).hexdigest()
+        with open(password_file, 'w') as f:
+            f.write(hashed)
+
+    # 저장된 해시 읽기
+    with open(password_file, 'r') as f:
+        stored_hash = f.read().strip()
+
+    # 입력된 비밀번호 해시화
+    input_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    # 비교
+    return input_hash == stored_hash
 
 @app.route('/api/admin/verify-password', methods=['POST'])
 def verify_admin_password():
