@@ -2562,7 +2562,7 @@ function t(key) {
                     </div>
                     <div class="form-group">
                         <label>${t('tolerance')} (%) *</label>
-                        <input type="number" step="0.01" class="recipe-tolerance" required placeholder="0.50" value="0.50">
+                        <input type="number" step="0.01" class="recipe-tolerance" required placeholder="0.05" value="0.05">
                     </div>
                     <div class="form-group" style="display: flex; align-items: end;">
                         <label style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; cursor: pointer;">
