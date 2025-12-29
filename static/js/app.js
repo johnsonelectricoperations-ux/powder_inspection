@@ -3122,8 +3122,8 @@ function t(key) {
 
                 if (data.success) {
                     alert(`배합 작업이 시작되었습니다.\n배합 LOT: ${data.batch_lot}`);
-                    // 원재료 투입 페이지로 이동
-                    loadMaterialInputPage(data.work_id);
+                    // 원재료 투입 페이지로 이동 (배합작업 메뉴에서 시작)
+                    loadMaterialInputPage(data.work_id, 'blending');
                 } else {
                     alert('작업 시작 실패: ' + data.message);
                 }
@@ -3140,8 +3140,10 @@ function t(key) {
         let currentBlendingWork = null;
         let currentBlendingRecipes = [];
         let currentMaterialInputs = [];
+        let materialInputSourcePage = 'blending'; // 진입한 페이지 추적 ('blending' 또는 'blending-log')
 
-        async function loadMaterialInputPage(workId) {
+        async function loadMaterialInputPage(workId, sourcePage = 'blending') {
+            materialInputSourcePage = sourcePage;
             try {
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
                 const data = await response.json();
@@ -3445,22 +3447,28 @@ function t(key) {
                 }
             });
 
-            // 버튼 렌더링 - 작업 상태에 따라 다른 버튼 표시
+            // 버튼 렌더링 - 작업 상태 및 진입 경로에 따라 다른 버튼 표시
             const buttonsContainer = document.getElementById('materialInputButtons');
             const workStatus = currentBlendingWork.status;
 
+            // 돌아가기 버튼 텍스트 및 페이지 결정
+            const backButtonText = materialInputSourcePage === 'blending'
+                ? '← 배합작업 메뉴로 돌아가기'
+                : '← 조회화면으로 돌아가기';
+            const backPage = materialInputSourcePage === 'blending' ? 'blending' : 'blending-log';
+
             if (workStatus === 'completed') {
-                // 완료된 작업 - 바코드 인쇄 및 조회화면으로 돌아가기 버튼
+                // 완료된 작업 - 바코드 인쇄 및 돌아가기 버튼
                 buttonsContainer.innerHTML = `
                     <button class="btn" onclick="showBarcodePanel()" style="background:#2196F3; color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
                         🏷️ 바코드 라벨 인쇄
                     </button>
-                    <button class="btn secondary" onclick="showPage('blending-log')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
-                        ← 조회화면으로 돌아가기
+                    <button class="btn secondary" onclick="showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ${backButtonText}
                     </button>
                 `;
             } else {
-                // 진행중인 작업 - 배합 작업 완료 및 조회화면 버튼
+                // 진행중인 작업 - 배합 작업 완료 및 돌아가기 버튼
                 const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
                 const allValid = currentMaterialInputs.every(input => input.is_valid);
                 const canComplete = allCompleted && allValid;
@@ -3469,8 +3477,8 @@ function t(key) {
                     <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" ${!canComplete ? 'disabled' : ''} style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
                         배합 작업 완료
                     </button>
-                    <button class="btn secondary" onclick="showPage('blending-log')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
-                        ← 조회화면으로 돌아가기
+                    <button class="btn secondary" onclick="showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ${backButtonText}
                     </button>
                 `;
 
@@ -3700,7 +3708,7 @@ function t(key) {
                 if (data.success) {
                     if (data.is_valid) {
                         alert('✓ 원재료 투입이 기록되었습니다.');
-                        loadMaterialInputPage(currentBlendingWork.id);
+                        loadMaterialInputPage(currentBlendingWork.id, materialInputSourcePage);
                     } else {
                         alert(`⚠️ 부적정(NG) 판정되어 저장할 수 없습니다.\n${data.validation_message}`);
                     }
@@ -4051,7 +4059,7 @@ function t(key) {
                             <td>
                                 ${work.status === 'completed' ?
                                     `<div style="display: flex; gap: 5px;">
-                                        <button class="btn" onclick="loadMaterialInputPage(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
+                                        <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending-log')" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
                                             입력현황
                                         </button>
                                         <button class="btn danger" onclick="deleteBlendingWork(${work.id}, '${work.batch_lot}')" style="padding: 6px 12px; font-size: 0.9em; background:#f44336; color:white; border:none; border-radius:4px;">
@@ -4134,7 +4142,7 @@ function t(key) {
                 alert('유효한 작업 ID가 필요합니다.');
                 return;
             }
-            loadMaterialInputPage(workId);
+            loadMaterialInputPage(workId, 'blending');
         }
 
         // ============================================
