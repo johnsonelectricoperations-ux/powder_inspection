@@ -2392,61 +2392,87 @@ function t(key) {
                 const listDiv = document.getElementById('productList');
 
                 if (data.success && data.data.length > 0) {
-                    let html = '';
+                    let html = '<table class="data-table" style="width:100%"><thead><tr><th>제품명</th><th>제품코드</th><th>작업</th></tr></thead><tbody>';
 
-                    data.data.forEach(product => {
+                    data.data.forEach((product, index) => {
                         const totalRatio = product.recipes.reduce((sum, r) => sum + parseFloat(r.ratio || 0), 0);
+                        const productNameEscaped = product.product_name.replace(/'/g, "\\'");
 
                         html += `
-                            <div class="card product-card" data-product-name="${product.product_name}" style="margin-bottom: 15px; border-left: 4px solid #667eea;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div>
-                                        <h3 style="margin: 0;">${product.product_name}</h3>
-                                        ${product.product_code ? `<small style="color: #666;">${t('productCode')}: ${product.product_code}</small>` : ''}
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn primary" onclick="editProduct('${product.product_name}')" style="padding: 8px 12px;">${t('edit')}</button>
-                                        <button class="btn danger" onclick="deleteProduct('${product.product_name}')" style="padding: 8px 12px;">${t('delete')}</button>
-                                    </div>
-                                </div>
-
-                                <table style="width: 100%; font-size: 0.9em;">
-                                    <tr>
-                                        <th>${t('powderName')}</th>
-                                        <th>${t('category')}</th>
-                                        <th>${t('ratio')} (%)</th>
-                                        <th>${t('tolerance')} (%)</th>
-                                    </tr>`;
+                            <tr>
+                                <td style="padding: 12px;">${product.product_name}</td>
+                                <td style="padding: 12px;">${product.product_code || '-'}</td>
+                                <td style="padding: 12px;">
+                                    <button class="btn" onclick="toggleProductDetail('${productNameEscaped}', ${index})" id="viewBtn_${index}" style="padding: 6px 12px; margin-right: 5px; background: #2196F3;">조회</button>
+                                    <button class="btn primary" onclick="editProduct('${productNameEscaped}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
+                                    <button class="btn danger" onclick="deleteProduct('${productNameEscaped}')" style="padding: 6px 12px;">삭제</button>
+                                </td>
+                            </tr>
+                            <tr id="detailRow_${index}" style="display: none;">
+                                <td colspan="3" style="padding: 0; background: #f8f9fa;">
+                                    <div style="padding: 20px; border-left: 4px solid #667eea;">
+                                        <h4 style="margin: 0 0 15px 0; color: #667eea;">배합 구성</h4>
+                                        <table style="width: 100%; font-size: 0.9em;">
+                                            <tr style="background: #e3f2fd;">
+                                                <th style="padding: 10px;">${t('powderName')}</th>
+                                                <th style="padding: 10px;">${t('category')}</th>
+                                                <th style="padding: 10px;">${t('ratio')} (%)</th>
+                                                <th style="padding: 10px;">${t('tolerance')} (%)</th>
+                                                <th style="padding: 10px;">Main</th>
+                                            </tr>`;
 
                         product.recipes.forEach(recipe => {
                             const categoryBadge = recipe.powder_category === 'incoming'
                                 ? `<span class="badge" style="background: #2196F3;">${t('incoming')}</span>`
                                 : `<span class="badge" style="background: #FF9800;">${t('mixing')}</span>`;
 
+                            const isMainBadge = recipe.is_main
+                                ? '<span style="color: #FF5722; font-weight: 600;">✓</span>'
+                                : '-';
+
                             html += `
                                 <tr>
-                                    <td>${recipe.powder_name}</td>
-                                    <td>${categoryBadge}</td>
-                                    <td>${formatTwo(recipe.ratio)}%</td>
-                                    <td>±${formatTwo(recipe.tolerance_percent)}%</td>
+                                    <td style="padding: 8px;">${recipe.powder_name}</td>
+                                    <td style="padding: 8px;">${categoryBadge}</td>
+                                    <td style="padding: 8px;">${formatTwo(recipe.ratio)}%</td>
+                                    <td style="padding: 8px;">±${formatTwo(recipe.tolerance_percent)}%</td>
+                                    <td style="padding: 8px; text-align: center;">${isMainBadge}</td>
                                 </tr>`;
                         });
 
                         html += `
-                                    <tr style="font-weight: bold; background: #f5f5f5;">
-                                        <td>${t('totalRatio')}</td>
-                                        <td colspan="3">${totalRatio.toFixed(2)}%</td>
-                                    </tr>
-                                </table>
-                            </div>`;
+                                            <tr style="font-weight: bold; background: #f5f5f5;">
+                                                <td style="padding: 10px;">${t('totalRatio')}</td>
+                                                <td colspan="4" style="padding: 10px;">${totalRatio.toFixed(2)}%</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>`;
                     });
 
+                    html += '</tbody></table>';
                     listDiv.innerHTML = html;
                 } else {
                     listDiv.innerHTML = `<div class="empty-message">${t('noProducts')}</div>`;
                 }
             } catch (error) {
                 console.error('Recipe 목록 로딩 실패:', error);
+            }
+        }
+
+        function toggleProductDetail(productName, index) {
+            const detailRow = document.getElementById(`detailRow_${index}`);
+            const viewBtn = document.getElementById(`viewBtn_${index}`);
+
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+                viewBtn.textContent = '닫기';
+                viewBtn.style.background = '#FF5722';
+            } else {
+                detailRow.style.display = 'none';
+                viewBtn.textContent = '조회';
+                viewBtn.style.background = '#2196F3';
             }
         }
 
