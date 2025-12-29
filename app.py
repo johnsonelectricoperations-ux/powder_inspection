@@ -289,6 +289,7 @@ def _do_start_inspection():
     inspection_type = data.get('inspectionType')
     inspector = data.get('inspector')
     category = data.get('category', 'incoming')  # 기본값은 incoming
+    inspection_date = data.get('inspectionDate')  # 검사일 추가
 
     if not all([powder_name, lot_number]):
         return jsonify({'success': False, 'message': '필수 입력 항목이 누락되었습니다.'})
@@ -319,7 +320,8 @@ def _do_start_inspection():
                     'completedItems': json.loads(progress_data['completed_items'] or '[]'),
                     'totalItems': json.loads(progress_data['total_items'] or '[]'),
                     'progress': progress_data['progress'],
-                    'category': progress_data.get('category', 'incoming')
+                    'category': progress_data.get('category', 'incoming'),
+                    'inspectionDate': progress_data.get('inspection_date')
                 },
                 'items': items
             })
@@ -343,7 +345,8 @@ def _do_start_inspection():
                     'inspector': inspector,
                     'isCompleted': True,
                     'progress': '완료',
-                    'category': result_data.get('category', 'incoming')
+                    'category': result_data.get('category', 'incoming'),
+                    'inspectionDate': result_data.get('inspection_date')
                 },
                 'items': []
             })
@@ -359,10 +362,10 @@ def _do_start_inspection():
         # 진행중검사 테이블에 추가
         cursor.execute('''
             INSERT INTO inspection_progress
-            (powder_name, lot_number, inspection_type, inspector, completed_items, total_items, progress, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (powder_name, lot_number, inspection_type, inspector, completed_items, total_items, progress, category, inspection_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (powder_name, lot_number, inspection_type, inspector,
-              json.dumps([]), json.dumps(item_names), f'0/{len(item_names)}', category))
+              json.dumps([]), json.dumps(item_names), f'0/{len(item_names)}', category, inspection_date))
 
         conn.commit()
 
@@ -376,7 +379,8 @@ def _do_start_inspection():
                 'inspector': inspector,
                 'completedItems': [],
                 'totalItems': item_names,
-                'category': category
+                'category': category,
+                'inspectionDate': inspection_date
             },
             'items': items
         })
@@ -1149,7 +1153,7 @@ def _do_save_to_result_table(powder_name, lot_number, item_name, values, average
         else:
             # 새 행 생성
             cursor.execute('''
-                SELECT inspection_type, inspector, category FROM inspection_progress
+                SELECT inspection_type, inspector, category, inspection_date FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
@@ -1157,11 +1161,12 @@ def _do_save_to_result_table(powder_name, lot_number, item_name, values, average
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
             category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
+            inspection_date = progress_data[3] if progress_data and len(progress_data) > 3 else None
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector, category))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category, inspection_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category, inspection_date))
 
             new_id = cursor.lastrowid
 
@@ -1373,7 +1378,7 @@ def _do_save_particle_to_result_table(powder_name, lot_number, particle_data, ov
             cursor.execute(query, update_values)
         else:
             cursor.execute('''
-                SELECT inspection_type, inspector, category FROM inspection_progress
+                SELECT inspection_type, inspector, category, inspection_date FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
@@ -1381,11 +1386,12 @@ def _do_save_particle_to_result_table(powder_name, lot_number, particle_data, ov
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
             category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
+            inspection_date = progress_data[3] if progress_data and len(progress_data) > 3 else None
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector, category))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category, inspection_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category, inspection_date))
 
             new_id = cursor.lastrowid
             update_values.append(new_id)

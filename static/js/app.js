@@ -391,17 +391,24 @@ function t(key) {
         const incomingFormElement = document.getElementById('incomingForm');
 
         if (incomingFormElement) {
+            // 검사일 기본값을 오늘 날짜로 설정
+            const incomingDateInput = document.getElementById('incomingInspectionDate');
+            if (incomingDateInput && !incomingDateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                incomingDateInput.value = today;
+            }
 
             incomingFormElement.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const powderName = document.getElementById('incomingPowderName').value;
             const lotNumber = document.getElementById('incomingLotNumber').value;
+            const inspectionDate = document.getElementById('incomingInspectionDate').value;
             const inspectionType = document.getElementById('incomingInspectionType').value;
             const inspector = document.getElementById('incomingInspector').value;
             const category = 'incoming';
 
-            await startInspection(powderName, lotNumber, inspectionType, inspector, category);
+            await startInspection(powderName, lotNumber, inspectionType, inspector, category, inspectionDate);
         });
         }
 
@@ -455,12 +462,12 @@ function t(key) {
         }
 
         // 검사 시작 공통 함수
-        async function startInspection(powderName, lotNumber, inspectionType, inspector, category) {
+        async function startInspection(powderName, lotNumber, inspectionType, inspector, category, inspectionDate = null) {
             try {
                 const response = await fetch(`${API_BASE}/api/start-inspection`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ powderName, lotNumber, inspectionType, inspector, category })
+                    body: JSON.stringify({ powderName, lotNumber, inspectionType, inspector, category, inspectionDate })
                 });
 
                 const data = await response.json();
@@ -512,6 +519,7 @@ function t(key) {
         async function showInspectionPage() {
             document.getElementById('infoPowderName').textContent = currentInspection.powderName;
             document.getElementById('infoLotNumber').textContent = currentInspection.lotNumber;
+            document.getElementById('infoInspectionDate').textContent = currentInspection.inspectionDate || '-';
 
             // 검사자 표시 영역 설정 (category에 따라 다르게)
             const inspectorDisplay = document.getElementById('inspectorDisplay');
