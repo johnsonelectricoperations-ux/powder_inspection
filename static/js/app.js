@@ -2665,6 +2665,58 @@ function t(key) {
                 if (typeof loadBlendingOrdersForBlending === 'function') {
                     await loadBlendingOrdersForBlending();
                 }
+
+                // 진행중인 배합작업 목록 로드
+                await loadInProgressBlendingWorks();
+        }
+
+        // --------------------------------------------
+        // 진행중인 배합작업 목록 로드
+        // --------------------------------------------
+        async function loadInProgressBlendingWorks() {
+            try {
+                const response = await fetch(`${API_BASE}/api/blending/works?status=in_progress`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('inProgressBlendingWorks');
+                if (!tbody) return;
+
+                if (!data.success || !data.works || data.works.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-message">진행중인 배합작업이 없습니다.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.works.map(work => {
+                    const startTime = work.start_time ? new Date(work.start_time).toLocaleString('ko-KR') : '-';
+
+                    // 진행률 계산 (투입된 원재료 수 / 전체 원재료 수)
+                    const progress = work.material_input_count || 0;
+                    const total = work.total_materials || 0;
+                    const progressPercent = total > 0 ? Math.round((progress / total) * 100) : 0;
+
+                    return `
+                        <tr>
+                            <td>${work.work_order || '-'}</td>
+                            <td>${work.product_name}</td>
+                            <td><strong>${work.batch_lot}</strong></td>
+                            <td>${work.operator || '-'}</td>
+                            <td>${startTime}</td>
+                            <td>${progress}/${total} (${progressPercent}%)</td>
+                            <td>
+                                <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending')" style="padding: 6px 12px; font-size: 0.9em; background:#4CAF50; color:white; border:none; border-radius:4px;">
+                                    작업 계속
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('진행중인 배합작업 로드 실패:', error);
+                const tbody = document.getElementById('inProgressBlendingWorks');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-message">오류 발생: ' + error.message + '</td></tr>';
+                }
+            }
         }
 
         // --------------------------------------------
@@ -4018,7 +4070,7 @@ function t(key) {
         async function loadBlendingWorks() {
             try {
                 const statusFilterEl = document.getElementById('blendingLogStatusFilter');
-                const statusFilter = statusFilterEl ? statusFilterEl.value : 'in_progress';
+                const statusFilter = statusFilterEl ? statusFilterEl.value : 'completed';
                 const completedDateFrom = document.getElementById('filterCompletedDateFrom') ? document.getElementById('filterCompletedDateFrom').value : '';
                 const completedDateTo = document.getElementById('filterCompletedDateTo') ? document.getElementById('filterCompletedDateTo').value : '';
                 const productName = document.getElementById('filterProductName') ? document.getElementById('filterProductName').value.trim() : '';

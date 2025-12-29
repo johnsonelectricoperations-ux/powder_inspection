@@ -216,6 +216,31 @@
                 <div id="blendingOrdersForBlending" class="scrollable-list">로딩 중...</div>
             </div>
 
+            <!-- 진행중인 배합작업 목록 -->
+            <div class="card">
+                <h3>진행중인 배합작업</h3>
+                <div class="scrollable-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>작업지시 번호</th>
+                                <th>제품명</th>
+                                <th>배합 LOT</th>
+                                <th>작업자</th>
+                                <th>시작시간</th>
+                                <th>진행률</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inProgressBlendingWorks">
+                            <tr>
+                                <td colspan="7" class="loading">로딩 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card" id="blendingFormCard" style="display:none;">
                 <div class="card-title" data-i18n="blendingWorkOrder">작업 지시 정보</div>
                 <form id="blendingForm">
@@ -281,8 +306,8 @@
                     <label data-i18n="status">상태:</label>
                     <select id="blendingLogStatusFilter" onchange="loadBlendingWorks()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="all" data-i18n="all">전체</option>
-                        <option value="completed" data-i18n="completed">완료</option>
-                        <option value="in_progress" data-i18n="inProgress" selected>진행중</option>
+                        <option value="completed" data-i18n="completed" selected>완료</option>
+                        <option value="in_progress" data-i18n="inProgress">진행중</option>
                     </select>
 
                     <label style="margin-left: 12px;">작업완료일</label>
