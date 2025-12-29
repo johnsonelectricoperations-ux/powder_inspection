@@ -2362,11 +2362,15 @@ def delete_blending_work(work_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/api/completed-lots/<powder_name>', methods=['GET'])
-def get_completed_lots(powder_name):
+@app.route('/api/completed-lots', methods=['GET'])
+def get_completed_lots():
     """특정 분말의 수입검사 완료된 LOT 번호 목록 조회"""
     try:
+        powder_name = request.args.get('powder_name')
         category = request.args.get('category', 'incoming')
+
+        if not powder_name:
+            return jsonify({'success': False, 'message': 'powder_name is required'})
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()

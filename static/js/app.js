@@ -3743,7 +3743,7 @@ function t(key) {
                         const lotSelect2 = document.getElementById(`lot-${recipeId}-2`);
                         if (!lotSelect1) return;
 
-                        const response = await fetch(`${API_BASE}/api/completed-lots/${encodeURIComponent(powderName)}?category=${category}`);
+                        const response = await fetch(`${API_BASE}/api/completed-lots?powder_name=${encodeURIComponent(powderName)}&category=${category}`);
                         const data = await response.json();
 
                         if (data.success && data.lots && data.lots.length > 0) {
