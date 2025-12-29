@@ -218,12 +218,7 @@
         <!-- 배합 작업 페이지 -->
         <div id="blending" class="page">
             <div class="page-header">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <h2 data-i18n="blendingTitle">배합 작업 지시</h2>
-                    <button id="backToOrderListBtn" class="btn secondary" onclick="showOrderListView()" style="display: none; padding: 8px 16px;">
-                        ← 작업지시서목록으로 돌아가기
-                    </button>
-                </div>
+                <h2 data-i18n="blendingTitle">배합 작업 지시</h2>
                 <p data-i18n="blendingDesc">제품 Recipe를 선택하고 배합 작업을 시작합니다</p>
             </div>
             <!-- 작업지시서 목록 (이 화면에서 작업시작 가능) -->
@@ -283,7 +278,7 @@
                                 <option value="2000">2 ton (2,000 kg)</option>
                                 <option value="3000">3 ton (3,000 kg)</option>
                                 <option value="4000">4 ton (4,000 kg)</option>
-                                <option value="5000" selected>5 ton (5,000 kg)</option>
+                                <option value="5000">5 ton (5,000 kg)</option>
                             </select>
                         </div>
                         <!-- Main 분말 중량 선택 영역 (동적 생성) -->
@@ -302,7 +297,12 @@
                         <div id="recipePreviewContent"></div>
                     </div>
 
-                    <button type="submit" class="btn" style="margin-top: 20px;" data-i18n="startBlendingWork">배합 작업 시작</button>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" id="backToOrderListBtn" class="btn secondary" onclick="showOrderListView()" style="display: none;">
+                            ← 작업지시서목록으로 돌아가기
+                        </button>
+                        <button type="submit" class="btn" data-i18n="startBlendingWork">배합 작업 시작</button>
+                    </div>
                 </form>
             </div>
         </div>
