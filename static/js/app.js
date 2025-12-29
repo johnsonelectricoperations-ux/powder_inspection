@@ -5245,6 +5245,264 @@ function t(key) {
             }
         });
 
+        // ==========================================
+        // 자동입력 작업 화면 관련 함수
+        // ==========================================
+
+        // 자동입력 모드 시작
+        async function startAutoInputMode() {
+            // 배합작업 폼 검증
+            const productName = document.getElementById('blendingProductName').value;
+            const batchLot = document.getElementById('blendingBatchLot').value;
+            const targetWeight = document.getElementById('blendingTargetWeight').value;
+            const operator = document.getElementById('blendingOperator').value;
+
+            if (!productName || !batchLot || !targetWeight || !operator) {
+                alert('배합작업 정보를 먼저 입력해주세요.\n(제품명, 배합 LOT, 배합중량, 작업자)');
+                return;
+            }
+
+            // Recipe 확인
+            if (!currentRecipe || currentRecipe.length === 0) {
+                alert('제품의 Recipe 정보가 없습니다.');
+                return;
+            }
+
+            // 자동입력 페이지로 이동
+            showPage('auto-input');
+
+            // 작업 정보 표시
+            document.getElementById('autoInputProductName').textContent = productName;
+            document.getElementById('autoInputBatchLot').textContent = batchLot;
+            document.getElementById('autoInputTargetWeight').textContent = parseFloat(targetWeight).toLocaleString();
+
+            // 원재료 목록 렌더링
+            await renderAutoInputMaterialList();
+        }
+
+        // 자동입력 원재료 목록 렌더링
+        async function renderAutoInputMaterialList() {
+            const listContainer = document.getElementById('autoInputMaterialList');
+            const targetWeight = parseFloat(document.getElementById('blendingTargetWeight').value);
+
+            if (!currentRecipe || currentRecipe.length === 0) {
+                listContainer.innerHTML = '<div class="empty-message">Recipe 정보가 없습니다.</div>';
+                return;
+            }
+
+            // Main 분말 중량 정보 가져오기
+            const mainWeights = {};
+            currentRecipe.forEach(item => {
+                if (item.powder_category === 'main') {
+                    const weightInput = document.getElementById(`mainWeight_${item.powder_name}`);
+                    if (weightInput) {
+                        mainWeights[item.powder_name] = parseFloat(weightInput.value) || 0;
+                    }
+                }
+            });
+
+            // 각 분말의 필요 중량 계산
+            const materials = currentRecipe.map((item, index) => {
+                let calculatedWeight = 0;
+
+                if (item.powder_category === 'main') {
+                    // Main은 직접 입력한 중량 사용
+                    calculatedWeight = mainWeights[item.powder_name] || (targetWeight * item.ratio / 100);
+                } else {
+                    // Main 외 분말은 비율로 계산
+                    calculatedWeight = targetWeight * item.ratio / 100;
+                }
+
+                return {
+                    index: index,
+                    powderName: item.powder_name,
+                    ratio: item.ratio,
+                    calculatedWeight: calculatedWeight.toFixed(2),
+                    tolerance: item.tolerance_percent || 5,
+                    category: item.powder_category,
+                    isMain: item.powder_category === 'main'
+                };
+            });
+
+            // 진행 상황 업데이트
+            document.getElementById('autoInputProgress').textContent = `0/${materials.length}`;
+
+            // HTML 생성
+            let html = '';
+            materials.forEach((material, idx) => {
+                const rowClass = idx === 0 ? 'material-input-row active' : 'material-input-row';
+                const statusBadge = idx === 0 ? '<span class="status-badge active">진행중</span>' : '<span class="status-badge waiting">대기</span>';
+
+                html += `
+                    <div class="${rowClass}" id="materialRow_${idx}" data-index="${idx}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 1.3em; font-weight: 700; color: #333;">${material.powderName}</span>
+                                    ${material.isMain ? '<span style="background: #2196F3; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600;">MAIN</span>' : ''}
+                                    ${statusBadge}
+                                </h4>
+                                <p style="margin: 0; color: #666; font-size: 0.9em;">
+                                    비율: ${material.ratio}% |
+                                    목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
+                                    허용오차: ±${material.tolerance}%
+                                </p>
+                            </div>
+                            <button type="button" class="btn" onclick="activateMaterialRow(${idx})"
+                                    id="activateBtn_${idx}" style="${idx === 0 ? 'display:none;' : ''}">
+                                작업 시작
+                            </button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 15px; align-items: end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="lotInput_${idx}" style="font-weight: 600;">
+                                    📱 LOT 번호
+                                </label>
+                                <input type="text"
+                                       id="lotInput_${idx}"
+                                       class="auto-input-field lot-input"
+                                       data-index="${idx}"
+                                       placeholder="스캔 또는 수동입력"
+                                       ${idx !== 0 ? 'disabled' : ''}>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="weightInput_${idx}" style="font-weight: 600;">
+                                    ⚖️ 계량 중량 (kg)
+                                </label>
+                                <input type="number"
+                                       id="weightInput_${idx}"
+                                       class="auto-input-field weight-input"
+                                       data-index="${idx}"
+                                       step="0.01"
+                                       placeholder="${material.isMain ? '수동입력' : '중량계 또는 수동입력'}"
+                                       ${idx !== 0 ? 'disabled' : ''}>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button"
+                                        class="btn"
+                                        onclick="saveMaterialRow(${idx})"
+                                        id="saveBtn_${idx}"
+                                        ${idx !== 0 ? 'disabled' : ''}>
+                                    💾 저장
+                                </button>
+                                <button type="button"
+                                        class="btn secondary"
+                                        onclick="clearMaterialRow(${idx})"
+                                        id="clearBtn_${idx}"
+                                        ${idx !== 0 ? 'disabled' : ''}>
+                                    🔄 초기화
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+
+            // 첫 번째 행의 LOT 입력 필드에 포커스
+            setTimeout(() => {
+                const firstLotInput = document.getElementById('lotInput_0');
+                if (firstLotInput) {
+                    firstLotInput.focus();
+                }
+            }, 100);
+        }
+
+        // 원재료 행 활성화
+        function activateMaterialRow(index) {
+            // 모든 행 비활성화
+            document.querySelectorAll('.material-input-row').forEach(row => {
+                row.classList.remove('active');
+                row.querySelector('.status-badge').className = 'status-badge completed';
+                row.querySelector('.status-badge').textContent = '완료';
+            });
+
+            // 해당 행 활성화
+            const targetRow = document.getElementById(`materialRow_${index}`);
+            targetRow.classList.add('active');
+            targetRow.querySelector('.status-badge').className = 'status-badge active';
+            targetRow.querySelector('.status-badge').textContent = '진행중';
+
+            // 입력 필드 활성화
+            document.getElementById(`lotInput_${index}`).disabled = false;
+            document.getElementById(`weightInput_${index}`).disabled = false;
+            document.getElementById(`saveBtn_${index}`).disabled = false;
+            document.getElementById(`clearBtn_${index}`).disabled = false;
+            document.getElementById(`activateBtn_${index}`).style.display = 'none';
+
+            // 포커스 이동
+            document.getElementById(`lotInput_${index}`).focus();
+        }
+
+        // 원재료 행 저장
+        async function saveMaterialRow(index) {
+            const lotInput = document.getElementById(`lotInput_${index}`);
+            const weightInput = document.getElementById(`weightInput_${index}`);
+
+            const lotNumber = lotInput.value.trim();
+            const weight = parseFloat(weightInput.value);
+
+            // 유효성 검사
+            if (!lotNumber) {
+                alert('LOT 번호를 입력해주세요.');
+                lotInput.focus();
+                return;
+            }
+
+            if (!weight || weight <= 0) {
+                alert('계량 중량을 입력해주세요.');
+                weightInput.focus();
+                return;
+            }
+
+            // 저장 처리 (향후 서버 전송 구현)
+            console.log(`원재료 ${index} 저장:`, { lotNumber, weight });
+
+            // 입력 필드 비활성화 및 완료 표시
+            lotInput.disabled = true;
+            weightInput.disabled = true;
+            document.getElementById(`saveBtn_${index}`).disabled = true;
+            document.getElementById(`clearBtn_${index}`).disabled = true;
+
+            const currentRow = document.getElementById(`materialRow_${index}`);
+            currentRow.classList.remove('active');
+            currentRow.querySelector('.status-badge').className = 'status-badge completed';
+            currentRow.querySelector('.status-badge').textContent = '완료';
+
+            // 진행 상황 업데이트
+            const totalRows = document.querySelectorAll('.material-input-row').length;
+            const completedRows = index + 1;
+            document.getElementById('autoInputProgress').textContent = `${completedRows}/${totalRows}`;
+
+            // 다음 행이 있으면 활성화
+            const nextIndex = index + 1;
+            if (nextIndex < totalRows) {
+                setTimeout(() => {
+                    activateMaterialRow(nextIndex);
+                }, 300);
+            } else {
+                // 모든 작업 완료
+                setTimeout(() => {
+                    if (confirm('모든 원재료 투입이 완료되었습니다.\n배합작업 페이지로 돌아가시겠습니까?')) {
+                        showPage('blending');
+                    }
+                }, 500);
+            }
+        }
+
+        // 원재료 행 초기화
+        function clearMaterialRow(index) {
+            if (confirm('입력한 내용을 초기화하시겠습니까?')) {
+                document.getElementById(`lotInput_${index}`).value = '';
+                document.getElementById(`weightInput_${index}`).value = '';
+                document.getElementById(`lotInput_${index}`).focus();
+            }
+        }
+
         // 초기 로드
         window.onload = () => {
             loadDashboard();
