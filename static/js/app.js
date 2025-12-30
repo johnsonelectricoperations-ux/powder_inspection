@@ -3462,11 +3462,11 @@ function t(key) {
                 <table class="material-input-table" style="width: 100%; border-collapse: collapse; font-size: 1.1em;">
                     <thead>
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">분말명</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">LOT 번호</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">목표중량</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최소</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최대</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd; width: 15%;">분말명</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd; width: 13%;">LOT 번호</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd; width: 11%;">목표중량</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd; width: 11%;">허용최소</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd; width: 11%;">허용최대</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">계량중량</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">판정</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">상태</th>
@@ -3749,8 +3749,8 @@ function t(key) {
                         if (data.success && data.lots && data.lots.length > 0) {
                             const optionsHtml = ['<option value="">LOT 선택</option>'];
                             data.lots.forEach(lot => {
-                                const inspectionDate = new Date(lot.inspection_time).toLocaleDateString('ko-KR');
-                                optionsHtml.push(`<option value="${lot.lot_number}">${lot.lot_number} (검사일: ${inspectionDate})</option>`);
+                                const inspectionDate = new Date(lot.inspection_time).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
+                                optionsHtml.push(`<option value="${lot.lot_number}">${lot.lot_number} (${inspectionDate})</option>`);
                             });
 
                             lotSelect1.innerHTML = optionsHtml.join('');
