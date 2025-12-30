@@ -3462,14 +3462,14 @@ function t(key) {
                 <table class="material-input-table" style="width: 100%; border-collapse: collapse; font-size: 1.1em;">
                     <thead>
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">분말명</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">LOT 번호</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">목표중량</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최소</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최대</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">계량중량</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">판정</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">상태</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">분말명</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">LOT 번호</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">목표중량</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">허용최소</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">허용최대</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">계량중량</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">판정</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">상태</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -3531,14 +3531,14 @@ function t(key) {
                 html += `<tr style="background: ${rowBg}; border-bottom: 2px solid #eee;">`;
 
                 // 분말명
-                html += `<td style="padding: 15px; border: 1px solid #ddd; font-weight: 600; font-size: 1.1em;">${recipe.powder_name}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; font-weight: 600; font-size: 1.1em;">${recipe.powder_name}</td>`;
 
                 // LOT 번호 (최대 2개: 기본 1개, 필요시 추가)
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">${existingInput.material_lot}</td>`;
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">${existingInput.material_lot}</td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
+                        <td style="padding: 15px; border: 2px solid #999;">
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <select id="lot-${recipe.id}-1" onchange="validateLotSelection('${recipe.id}', '${recipe.powder_name}', 1)"
                                     data-powder="${recipe.powder_name}" data-category="${recipe.powder_category}"
@@ -3561,13 +3561,13 @@ function t(key) {
                 }
 
                 // 목표중량
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
 
                 // 허용최소
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMin)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMin)} ${unitLabel}</td>`;
 
                 // 허용최대
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMax)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMax)} ${unitLabel}</td>`;
 
                 // 계량중량 (Main 분말: 1~5ton 선택, 다른 분말: 최대 2개 입력)
                 if (isCompleted) {
@@ -3577,14 +3577,14 @@ function t(key) {
                     } else {
                         displayActual = Math.round(existingInput.actual_weight * 1000); // g
                     }
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayActual)} ${unitLabel}</td>`;
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayActual)} ${unitLabel}</td>`;
                 } else if (recipe.is_main) {
                     // Main 분말: 1~5ton 선택 (배합 작업 시 설정한 중량으로 초기화)
                     const mainWeight = currentBlendingWork.main_powder_weights && currentBlendingWork.main_powder_weights[recipe.powder_name]
                         ? currentBlendingWork.main_powder_weights[recipe.powder_name]
                         : '';
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
+                        <td style="padding: 15px; border: 2px solid #999;">
                             <div style="display:flex; flex-direction:column; gap:8px;">
                                 <select id="weight-${recipe.id}-1"
                                     onchange="checkWeightJudgement('${recipe.id}')"
@@ -3614,7 +3614,7 @@ function t(key) {
                 } else {
                     // 다른 분말: g 단위로 입력 (소수점 없음)
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
+                        <td style="padding: 15px; border: 2px solid #999;">
                             <input type="number" step="1" id="weight-${recipe.id}-1"
                                 onchange="checkWeightJudgement('${recipe.id}')"
                                 placeholder="중량1 (g)"
@@ -3633,10 +3633,10 @@ function t(key) {
                     const judgementBadge = isValid
                         ? '<span style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✓ 적정</span>'
                         : '<span style="background: #f44336; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✗ 부적정</span>';
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">${judgementBadge}</td>`;
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">${judgementBadge}</td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                        <td style="padding: 15px; border: 2px solid #999; text-align: center;">
                             <button onclick="judgeWeight('${recipe.id}', ${targetWeight}, ${tolerancePercent})"
                                 id="judge-${recipe.id}"
                                 disabled
@@ -3650,12 +3650,12 @@ function t(key) {
 
                 // 상태
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">
                         <span style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✓ 투입완료</span>
                     </td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                        <td style="padding: 15px; border: 2px solid #999; text-align: center;">
                             <button onclick="saveMaterialInput('${recipe.id}', '${recipe.powder_name}', ${targetWeight}, ${tolerancePercent}, '${recipe.powder_category}')"
                                 id="save-${recipe.id}"
                                 disabled
@@ -3673,7 +3673,7 @@ function t(key) {
                 if (!isCompleted) {
                     html += `
                         <tr id="validation-row-${recipe.id}" style="display: none; background: #fff3cd;">
-                            <td colspan="8" style="padding: 10px; border: 1px solid #ddd;">
+                            <td colspan="8" style="padding: 10px; border: 2px solid #999;">
                                 <div id="validation-${recipe.id}" style="font-weight: 600;"></div>
                             </td>
                         </tr>
