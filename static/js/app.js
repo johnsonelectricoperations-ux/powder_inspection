@@ -3564,10 +3564,10 @@ function t(key) {
                 html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
 
                 // 허용최소
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #fff7ed;">${formatNumber(displayMin)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMin)} ${unitLabel}</td>`;
 
                 // 허용최대
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #fff7ed;">${formatNumber(displayMax)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMax)} ${unitLabel}</td>`;
 
                 // 계량중량 (Main 분말: 1~5ton 선택, 다른 분말: 최대 2개 입력)
                 if (isCompleted) {
