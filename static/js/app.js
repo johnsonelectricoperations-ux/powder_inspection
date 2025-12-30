@@ -3561,13 +3561,13 @@ function t(key) {
                 }
 
                 // 목표중량
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
 
                 // 허용최소
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(displayMin)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #333; font-weight: 600;">${formatNumber(displayMin)} ${unitLabel}</td>`;
 
                 // 허용최대
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(displayMax)} ${unitLabel}</td>`;
+                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #333; font-weight: 600;">${formatNumber(displayMax)} ${unitLabel}</td>`;
 
                 // 계량중량 (Main 분말: 1~5ton 선택, 다른 분말: 최대 2개 입력)
                 if (isCompleted) {
