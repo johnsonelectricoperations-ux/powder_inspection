@@ -2851,8 +2851,8 @@ function t(key) {
                 const data = await response.json();
 
                 if (data.success) {
+                    await loadInProgressBlendingWorks(); // 목록 먼저 새로고침
                     alert('배합작업이 삭제되었습니다.');
-                    await loadInProgressBlendingWorks(); // 목록 새로고침
                 } else {
                     alert('삭제 실패: ' + (data.message || '알 수 없는 오류'));
                 }
