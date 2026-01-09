@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <!-- JsBarcode for barcode rendering -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- ApexCharts for dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         /* 라벨 패널 스타일: 인쇄용 100mm x 100mm 박스 */
         .label-panel {
@@ -51,31 +53,31 @@
             </div>
             <div class="nav-item" onclick="showPage('incoming')" data-page="incoming">
                 <span class="nav-item-icon">📦</span>
-                <span data-i18n="navIncoming">수입검사</span>
+                <span data-i18n="navIncoming">수입분말 검사</span>
             </div>
             <div class="nav-item" onclick="showPage('blending-orders')" data-page="blending-orders">
                 <span class="nav-item-icon">📄</span>
-                <span data-i18n="navBlendingOrders">배합작업지시서</span>
+                <span data-i18n="navBlendingOrders">배합작업계획 등록</span>
             </div>
             <div class="nav-item" onclick="showPage('blending')" data-page="blending">
                 <span class="nav-item-icon">⚗️</span>
                 <span data-i18n="navBlending">배합작업</span>
             </div>
-            <div class="nav-item" onclick="showPage('mixing')" data-page="mixing">
-                <span class="nav-item-icon">🔧</span>
-                <span data-i18n="navMixing">배합검사</span>
-            </div>
-            <div class="nav-item" onclick="showComingSoon('REWORK')" style="opacity: 0.6;">
-                <span class="nav-item-icon">🔄</span>
-                <span data-i18n="navRework">REWORK</span>
-            </div>
             <div class="nav-item" onclick="showPage('blending-log')" data-page="blending-log">
                 <span class="nav-item-icon">📋</span>
-                <span data-i18n="navBlendingLog">배합작업 조회</span>
+                <span data-i18n="navBlendingLog">배합작업 현황 조회</span>
+            </div>
+            <div class="nav-item" onclick="showPage('mixing')" data-page="mixing">
+                <span class="nav-item-icon">🔧</span>
+                <span data-i18n="navMixing">배합분말 검사</span>
             </div>
             <div class="nav-item" onclick="showPage('search')" data-page="search">
                 <span class="nav-item-icon">🔍</span>
                 <span data-i18n="navSearchResults">검사결과 조회</span>
+            </div>
+            <div class="nav-item" onclick="showComingSoon('REWORK')" style="opacity: 0.6;">
+                <span class="nav-item-icon">🔄</span>
+                <span data-i18n="navRework">REWORK</span>
             </div>
             <div class="nav-item" onclick="showPage('traceability')" data-page="traceability">
                 <span class="nav-item-icon">🔗</span>
@@ -86,28 +88,13 @@
                 <span data-i18n="navAdmin">관리자 모드</span>
             </div>
         </div>
-        <div class="language-switcher">
-            <button class="lang-btn" onclick="toggleLanguage()">
-                <span id="langIcon">🌐</span>
-                <span id="langText">English</span>
-            </button>
-        </div>
     </div>
 
     <!-- 메인 컨텐츠 영역 -->
     <div class="main-content">
         <!-- 대시보드 페이지 -->
         <div id="dashboard" class="page active">
-            <div class="page-header">
-                <h2 data-i18n="dashboardTitle">대시보드</h2>
-                <p data-i18n="dashboardDesc">진행중인 검사 목록과 전체 현황을 확인하세요</p>
-            </div>
-            <div class="card">
-                <div class="card-title">📋 <span data-i18n="ongoingInspections">진행중인 검사</span></div>
-                <div id="incompleteList">
-                    <div class="loading" data-i18n="loading">로딩 중...</div>
-                </div>
-            </div>
+            <!-- 빈 화면 -->
         </div>
 
         <!-- 수입검사 시작 페이지 -->
@@ -129,6 +116,10 @@
                         <div class="form-group">
                             <label for="incomingLotNumber"><span data-i18n="lotNumberLabel">LOT 번호</span> *</label>
                             <input type="text" id="incomingLotNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="incomingInspectionDate"><span data-i18n="inspectionDateLabel">검사일</span> *</label>
+                            <input type="date" id="incomingInspectionDate" required>
                         </div>
                         <div class="form-group">
                             <label for="incomingInspectionType"><span data-i18n="inspectionTypeLabel">검사 타입</span> *</label>
@@ -172,7 +163,7 @@
             <div class="card blending-order-form-card">
                 <h3 data-i18n="createBlendingOrder">작업지시서 생성</h3>
                 <form id="blendingOrderForm">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
                         <div class="form-group compact-form-group">
                             <label for="orderProductName"><span data-i18n="productName">제품명</span> *</label>
                             <select id="orderProductName" required onchange="loadOrderRecipe()">
@@ -191,10 +182,6 @@
                             <label for="orderCreatedBy"><span data-i18n="createdBy">작성자</span></label>
                             <input type="text" id="orderCreatedBy" placeholder="작성자 이름">
                         </div>
-                        <div class="form-group compact-form-group">
-                            <label for="orderNotes"><span data-i18n="notes">비고</span></label>
-                            <input type="text" id="orderNotes" placeholder="비고사항">
-                        </div>
                     </div>
                     <button type="submit" class="btn" data-i18n="createOrder">작업지시서 생성</button>
                 </form>
@@ -202,15 +189,26 @@
 
             <!-- 작업지시서 목록 -->
             <div class="card blending-order-list-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="margin-bottom: 15px;">
                     <h3 data-i18n="blendingOrderList">작업지시서 목록</h3>
-                    <div>
-                        <label for="orderStatusFilter" style="margin-right: 10px;" data-i18n="filterByStatus">상태 필터:</label>
-                        <select id="orderStatusFilter" onchange="loadBlendingOrders()">
-                            <option value="all" data-i18n="allStatus">전체</option>
-                            <option value="in_progress" data-i18n="inProgressStatus" selected>진행중</option>
-                            <option value="completed" data-i18n="completedStatus">완료</option>
-                        </select>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                        <div>
+                            <label for="orderStatusFilter" style="margin-right: 5px;" data-i18n="filterByStatus">상태:</label>
+                            <select id="orderStatusFilter" onchange="loadBlendingOrders()" style="padding: 6px;">
+                                <option value="all" data-i18n="allStatus">전체</option>
+                                <option value="in_progress" data-i18n="inProgressStatus" selected>진행중</option>
+                                <option value="completed" data-i18n="completedStatus">완료</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="orderDateFrom" style="margin-right: 5px;">작업일자:</label>
+                            <input type="date" id="orderDateFrom" onchange="loadBlendingOrders()" style="padding: 6px;">
+                            <span style="margin: 0 5px;">~</span>
+                            <input type="date" id="orderDateTo" onchange="loadBlendingOrders()" style="padding: 6px;">
+                        </div>
+                        <button class="btn secondary" onclick="resetOrderFilters()" style="padding: 6px 12px;">
+                            초기화
+                        </button>
                     </div>
                 </div>
                 <div id="blendingOrdersList" class="scrollable-list"></div>
@@ -224,9 +222,34 @@
                 <p data-i18n="blendingDesc">제품 Recipe를 선택하고 배합 작업을 시작합니다</p>
             </div>
             <!-- 작업지시서 목록 (이 화면에서 작업시작 가능) -->
-            <div class="card">
+            <div class="card" id="blendingOrderListCard">
                 <h3 data-i18n="blendingOrderList">작업지시서 목록</h3>
                 <div id="blendingOrdersForBlending" class="scrollable-list">로딩 중...</div>
+            </div>
+
+            <!-- 진행중인 배합작업 목록 -->
+            <div class="card" id="inProgressWorksCard">
+                <h3>진행중인 배합작업</h3>
+                <div class="scrollable-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>작업지시 번호</th>
+                                <th>제품명</th>
+                                <th>배합 LOT</th>
+                                <th>작업자</th>
+                                <th>시작시간</th>
+                                <th>진행률</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inProgressBlendingWorks">
+                            <tr>
+                                <td colspan="7" class="loading">로딩 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card" id="blendingFormCard" style="display:none;">
@@ -274,8 +297,95 @@
                         <div id="recipePreviewContent"></div>
                     </div>
 
-                    <button type="submit" class="btn" style="margin-top: 20px;" data-i18n="startBlendingWork">배합 작업 시작</button>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" id="backToOrderListBtn" class="btn secondary" onclick="showOrderListView()" style="display: none;">
+                            ← 작업지시서목록으로 돌아가기
+                        </button>
+                        <button type="submit" class="btn" data-i18n="startBlendingWork">배합 작업 시작</button>
+                        <button type="button" class="btn" onclick="startAutoInputMode()" style="background: #FF9800; color: white;">
+                            🔄 자동입력작업시작
+                        </button>
+                    </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- 자동입력 작업 페이지 -->
+        <div id="auto-input" class="page">
+            <div class="page-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2>🔄 자동입력 원재료 투입</h2>
+                        <p>바코드 스캐너와 중량계를 활용한 자동 입력 작업</p>
+                    </div>
+                    <button class="btn secondary" onclick="showPage('blending')" style="padding: 10px 20px;">
+                        ← 배합작업으로 돌아가기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 작업 정보 카드 -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                    <div>
+                        <p style="opacity: 0.9; margin-bottom: 5px;">제품명</p>
+                        <p style="font-size: 1.2em; font-weight: 600;"><span id="autoInputProductName">-</span></p>
+                    </div>
+                    <div>
+                        <p style="opacity: 0.9; margin-bottom: 5px;">배합 LOT</p>
+                        <p style="font-size: 1.2em; font-weight: 600;"><span id="autoInputBatchLot">-</span></p>
+                    </div>
+                    <div>
+                        <p style="opacity: 0.9; margin-bottom: 5px;">목표 중량</p>
+                        <p style="font-size: 1.2em; font-weight: 600;"><span id="autoInputTargetWeight">-</span> kg</p>
+                    </div>
+                    <div>
+                        <p style="opacity: 0.9; margin-bottom: 5px;">진행 상황</p>
+                        <p style="font-size: 1.2em; font-weight: 600;"><span id="autoInputProgress">0/0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 원재료 목록 -->
+            <div class="card">
+                <h3>원재료 투입 목록</h3>
+                <div id="autoInputMaterialList" style="margin-top: 20px; max-height: 500px; overflow-y: auto; padding-right: 10px;">
+                    <!-- 원재료 목록이 여기에 동적으로 생성됨 -->
+                    <div class="empty-message">작업을 시작하려면 배합작업 정보를 먼저 입력하세요.</div>
+                </div>
+            </div>
+
+            <!-- 하드웨어 연결 상태 (향후 구현) -->
+            <div class="card" style="border-left: 4px solid #FF9800;">
+                <h3>🔌 하드웨어 연결 상태</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5em;">📱</span>
+                            <strong>바코드 스캐너</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="scannerStatus" style="width: 12px; height: 12px; background: #ccc; border-radius: 50%; display: inline-block;"></span>
+                            <span style="color: #666; font-size: 0.9em;">연결 대기 중</span>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                            💡 활성화된 LOT 입력 필드에 자동으로 입력됩니다
+                        </p>
+                    </div>
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.5em;">⚖️</span>
+                            <strong>중량계</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="scaleStatus" style="width: 12px; height: 12px; background: #ccc; border-radius: 50%; display: inline-block;"></span>
+                            <span style="color: #666; font-size: 0.9em;">연결 대기 중</span>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                            💡 Print 버튼으로 중량 데이터를 전송합니다
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -294,15 +404,19 @@
                     <label data-i18n="status">상태:</label>
                     <select id="blendingLogStatusFilter" onchange="loadBlendingWorks()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="all" data-i18n="all">전체</option>
-                        <option value="completed" data-i18n="completed">완료</option>
-                        <option value="in_progress" data-i18n="inProgress" selected>진행중</option>
+                        <option value="completed" data-i18n="completed" selected>완료</option>
+                        <option value="in_progress" data-i18n="inProgress">진행중</option>
                     </select>
 
                     <label style="margin-left: 12px;">작업완료일</label>
-                    <input type="date" id="filterCompletedDate" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <input type="date" id="filterCompletedDateFrom" placeholder="시작일" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <span style="margin: 0 5px;">~</span>
+                    <input type="date" id="filterCompletedDateTo" placeholder="종료일" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
 
-                    <label style="margin-left: 12px;">제품명</label>
-                    <input type="text" id="filterProductName" placeholder="제품명" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <label style="margin-left: 12px;">배합분말명</label>
+                    <select id="filterProductName" style="padding:8px; border:1px solid #ddd; border-radius:4px; min-width: 150px;">
+                        <option value="">전체</option>
+                    </select>
 
                     <label style="margin-left: 12px;">배합 LOT</label>
                     <input type="text" id="filterBatchLot" placeholder="배합 LOT 번호" style="padding:8px; border:1px solid #ddd; border-radius:4px;">
@@ -371,9 +485,8 @@
                     <!-- 원재료 투입 목록 -->
                     <div id="materialInputList"></div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" disabled data-i18n="completeBlending">배합 작업 완료</button>
-                        <button class="btn danger" onclick="showPage('dashboard')" data-i18n="backToDashboard">대시보드로 돌아가기</button>
+                    <div id="materialInputButtons" style="display: flex; gap: 10px; margin-top: 20px;">
+                        <!-- 버튼은 JavaScript에서 동적으로 생성됨 -->
                     </div>
                 </div>
 
@@ -401,7 +514,7 @@
                 <p data-i18n="inspectionDesc">각 검사 항목을 차례대로 입력하세요</p>
             </div>
             <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">
                     <div>
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="powderName">분말명</p>
                         <p style="font-size: 1.2em; font-weight: 600;"><span id="infoPowderName"></span></p>
@@ -411,8 +524,12 @@
                         <p style="font-size: 1.2em; font-weight: 600;"><span id="infoLotNumber"></span></p>
                     </div>
                     <div>
+                        <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="inspectionDateLabel">검사일</p>
+                        <p style="font-size: 1.2em; font-weight: 600;"><span id="infoInspectionDate"></span></p>
+                    </div>
+                    <div id="inspectorContainer">
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="inspectorLabel">검사자</p>
-                        <p style="font-size: 1.2em; font-weight: 600;"><span id="infoInspector"></span></p>
+                        <div id="inspectorDisplay"></div>
                     </div>
                     <div>
                         <p style="opacity: 0.9; margin-bottom: 5px;" data-i18n="progressStatus">진행 상황</p>
@@ -432,7 +549,7 @@
             <div class="card">
                 <div class="card-title" data-i18n="searchCondition">검색 조건</div>
                 <form id="searchForm" style="margin-bottom: 20px;">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
                         <div class="form-group">
                             <label data-i18n="category">검사구분</label>
                             <select id="searchCategory">
@@ -451,8 +568,6 @@
                             <label data-i18n="lotNumberLabel">LOT 번호</label>
                             <input type="text" id="searchLotNumber" data-i18n-placeholder="lotNumberPlaceholder" placeholder="LOT 번호 입력">
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
                         <div class="form-group">
                             <label data-i18n="dateFrom">시작일</label>
                             <input type="date" id="searchDateFrom">
@@ -461,7 +576,7 @@
                             <label data-i18n="dateTo">종료일</label>
                             <input type="date" id="searchDateTo">
                         </div>
-                        <button type="submit" class="btn secondary" style="margin-bottom: 15px;" data-i18n="searchButton">조회</button>
+                        <button type="submit" class="btn secondary" style="margin-bottom: 15px; white-space: nowrap;" data-i18n="searchButton">조회</button>
                     </div>
                 </form>
             </div>
@@ -545,7 +660,6 @@
             <!-- 분말 사양 관리 -->
             <div class="card">
                 <div class="card-title">⚙️ <span data-i18n="powderSpecManagement">분말 사양 관리</span></div>
-                <button class="btn secondary" onclick="showAddPowderForm()" style="margin-bottom: 15px;" data-i18n="addNewPowder">+ 새 분말 추가</button>
 
                 <!-- 분말 추가/수정 폼 -->
                 <div id="powderFormContainer" style="display: none; margin-bottom: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
@@ -793,20 +907,14 @@
                 </div>
 
                 <!-- 분말 관리: 좌측 리스트 + 우측 세부사양 -->
-                <div class="admin-powder-layout">
-                    <div class="powder-list-column">
-                        <button class="btn secondary" style="width:100%; margin-bottom:10px;" onclick="showAddPowderForm()">+ 새분말추가</button>
+                <div class="admin-powder-layout" style="display: flex; gap: 14px; align-items: flex-start;">
+                    <div class="powder-list-column" style="width: 300px; min-width: 300px; flex-shrink: 0;">
+                        <button class="btn secondary" style="width:100%; margin-bottom:10px; padding:8px 12px; font-size:0.9em;" onclick="showAddPowderForm()">+ 새분말추가</button>
                         <div id="powderNamesList" class="vertical-list"></div>
                     </div>
-                    <div class="powder-spec-column">
-                        <div id="powderSpecHeader" class="spec-header">
-                            <div id="powderSpecTitle" style="font-weight:700;">분말 사양</div>
-                            <div class="spec-actions">
-                                <button class="btn secondary" id="specEditBtn" style="margin-right:6px;">수정</button>
-                                <button class="btn danger" id="specDeleteBtn">삭제</button>
-                            </div>
-                        </div>
-                        <div id="powderSpecDetail" class="scrollable-list" style="margin-top:12px; padding:12px; background:#fff; border-radius:6px; border:1px solid #eee;">
+                    <div class="powder-spec-column" style="flex: 1; min-width: 300px;">
+                        <div id="powderSpecHeader"></div>
+                        <div id="powderSpecDetail" style="margin-top:0;">
                             <div class="empty-message">왼쪽에서 분말명을 선택하세요</div>
                         </div>
 
@@ -885,7 +993,6 @@
     </div> <!-- end main-content -->
 
 
-    <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

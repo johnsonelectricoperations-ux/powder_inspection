@@ -9,9 +9,6 @@ let currentItems = [];
 // 임시 판정 결과 저장
 let pendingResults = {};
 
-// 다국어 지원
-let currentLang = localStorage.getItem('language') || 'ko';
-
 // 안전한 이벤트 리스너 추가 헬퍼 함수
 function safeAddEventListener(elementId, eventType, handler) {
     const element = document.getElementById(elementId);
@@ -22,48 +19,108 @@ function safeAddEventListener(elementId, eventType, handler) {
     return false;
 }
 
-// 번역 헬퍼 함수
+// 한국어 텍스트 매핑 함수
 function t(key) {
-    return translations[currentLang][key] || key;
-}
+    const ko = {
+        // 사이드바
+        appTitle: '배합공정 관리시스템',
+        navDashboard: '대시보드',
+        navIncoming: '수입검사',
+        navMixing: '배합검사',
+        navStartInspection: '새 검사 시작',
+        navSearchResults: '검사결과 조회',
+        navAdmin: '관리자 모드',
 
-// 언어 전환 함수
-function toggleLanguage() {
-    currentLang = currentLang === 'ko' ? 'en' : 'ko';
-    localStorage.setItem('language', currentLang);
-    updateLanguage();
-}
+        // 대시보드
+        dashboardTitle: '대시보드',
+        ongoingInspections: '진행중인 검사',
+        noOngoingInspections: '진행중인 검사가 없습니다',
+        powderName: '분말명',
+        lotNumber: 'LOT번호',
+        inspectionType: '검사타입',
+        inspector: '검사자',
+        progress: '진행률',
+        action: '작업',
+        continue: '이어하기',
+        category: '검사구분',
+        incoming: '수입검사',
+        mixing: '배합검사',
+        all: '전체',
 
-function updateLanguage() {
-    const t = translations[currentLang];
+        // 검사 관련
+        inspectionTime: '검사시간',
+        finalResult: '최종결과',
+        detail: '상세',
+        view: '보기',
+        noResults: '검색 결과가 없습니다',
+        average: '평균',
+        result: '결과',
+        inspectionDetails: '검사 항목 상세',
+        particleSize: '입도분석',
 
-    // data-i18n 속성을 가진 모든 요소 업데이트
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        if (t[key]) {
-            element.textContent = t[key];
-        }
-    });
+        // 검사 항목
+        flowRate: '유동도',
+        apparentDensity: '겉보기밀도',
+        cContent: 'C함량',
+        cuContent: 'Cu함량',
+        moisture: '수분도',
+        ash: '회분도',
+        sinterChangeRate: '소결변화율',
+        sinterStrength: '소결강도',
+        formingStrength: '성형강도',
+        formingLoad: '성형하중',
 
-    // data-i18n-placeholder 속성을 가진 모든 요소 업데이트
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-        const key = element.getAttribute('data-i18n-placeholder');
-        if (t[key]) {
-            element.placeholder = t[key];
-        }
-    });
+        // 삭제 확인
+        deleteInspectionConfirm: '진행중인 검사를 삭제하시겠습니까?',
+        deleteSuccess: '삭제되었습니다',
+        deleteError: '삭제 실패',
+        delete: '삭제',
 
-    // 언어 버튼 텍스트 업데이트
-    document.getElementById('langText').textContent = currentLang === 'ko' ? 'English' : '한국어';
+        // 관리자
+        noPowders: '등록된 분말이 없습니다',
+        selectPowderPlaceholder: '분말을 선택하세요',
+        meshSize: 'Mesh Size',
+        minValue: '최소값',
+        maxValue: '최대값',
+        noParticleSpecs: '등록된 입도분석 규격이 없습니다',
+        addParticleSpec: '입도분석 규격 추가',
+        editParticleSpec: '입도분석 규격 수정',
+        edit: '수정',
+        inspectorName: '검사자 이름',
+        noInspectors: '등록된 검사자가 없습니다',
+        operatorName: '작업자 이름',
+        noOperators: '등록된 작업자가 없습니다',
+        addPowder: '새 분말 추가',
+        editPowder: '분말 수정',
+        selectPlaceholder: '선택하세요',
+
+        // Recipe 관련
+        noProducts: '등록된 제품이 없습니다',
+        productCode: '제품 코드',
+        ratio: '비율',
+        tolerance: '허용 오차',
+        totalRatio: '합계',
+        addNewProduct: '+ 새 제품 추가',
+        editProduct: '제품 수정',
+
+        // 배합 작업
+        calculatedWeight: '계산된 중량',
+
+        // 라벨/바코드
+        companyName: 'Johnson Electric Operations',
+        labelPack: 'Pack',
+        labelWeight: '중량',
+        labelDate: '작업날짜',
+        printLabel: '인쇄'
+    };
+    return ko[key] || key;
 }
 
         // ============================================
         // 준비중 메뉴 안내
         // ============================================
         function showComingSoon(menuName) {
-            const message = currentLang === 'ko'
-                ? `"${menuName}" 기능은 현재 개발 중입니다.\n\n향후 업데이트에서 제공될 예정입니다.`
-                : `"${menuName}" feature is currently under development.\n\nIt will be available in a future update.`;
+            const message = `"${menuName}" 기능은 현재 개발 중입니다.\n\n향후 업데이트에서 제공될 예정입니다.`;
             alert(message);
         }
 
@@ -71,6 +128,21 @@ function updateLanguage() {
         // 페이지 전환
         // ============================================
         function showPage(pageName) {
+            // 관리자 모드 접근 시 비밀번호 확인
+            if (pageName === 'admin') {
+                verifyAdminPassword();
+                return;
+            }
+
+            // 바코드 라벨 패널 숨기기 (페이지 전환 시)
+            if (pageName !== 'material-input') {
+                const labelPanel = document.getElementById('labelPanel');
+                if (labelPanel) {
+                    labelPanel.style.display = 'none';
+                    labelPanel.setAttribute('aria-hidden', 'true');
+                }
+            }
+
             // 페이지 전환
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
@@ -102,12 +174,64 @@ function updateLanguage() {
             } else if (pageName === 'search') {
                 loadPowderListForSearch();
             } else if (pageName === 'blending-log') {
+                loadMixingPowderListForFilter();
                 loadBlendingWorks();
             } else if (pageName === 'blending-orders') {
                 loadBlendingOrdersPage();
-            } else if (pageName === 'admin') {
-                loadAdminPage();
             }
+        }
+
+        // ============================================
+        // 관리자 비밀번호 확인
+        // ============================================
+        async function verifyAdminPassword() {
+            const password = prompt('관리자 비밀번호를 입력하세요:');
+
+            if (password === null) {
+                // 사용자가 취소를 클릭
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/verify-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 비밀번호 확인 성공 - 관리자 페이지로 이동
+                    showAdminPageDirect();
+                } else {
+                    alert('비밀번호가 일치하지 않습니다.');
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        function showAdminPageDirect() {
+            // 비밀번호 확인 후 직접 관리자 페이지 표시
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById('admin').classList.add('active');
+
+            // 네비게이션 active 상태 업데이트
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeNav = document.querySelector(`.nav-item[data-page="admin"]`);
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+
+            // 관리자 페이지 로드
+            loadAdminPage();
         }
 
         // ============================================
@@ -134,9 +258,13 @@ function updateLanguage() {
             // mode: 'incoming' or 'mixing'
             powderSpecMode = mode;
 
+            // 폼이 열려있으면 닫기
+            hidePowderForm();
+
             // 탭 버튼 처리 (active 토글)
-            document.getElementById('adminTabIncoming').classList.remove('active');
-            document.getElementById('adminTabMixing').classList.remove('active');
+            // 먼저 모든 admin-tab 버튼의 active 클래스 제거
+            document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+            // 그 다음 선택된 탭만 active 추가
             if (mode === 'incoming') document.getElementById('adminTabIncoming').classList.add('active');
             else document.getElementById('adminTabMixing').classList.add('active');
 
@@ -273,17 +401,24 @@ function updateLanguage() {
         const incomingFormElement = document.getElementById('incomingForm');
 
         if (incomingFormElement) {
+            // 검사일 기본값을 오늘 날짜로 설정
+            const incomingDateInput = document.getElementById('incomingInspectionDate');
+            if (incomingDateInput && !incomingDateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                incomingDateInput.value = today;
+            }
 
             incomingFormElement.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const powderName = document.getElementById('incomingPowderName').value;
             const lotNumber = document.getElementById('incomingLotNumber').value;
+            const inspectionDate = document.getElementById('incomingInspectionDate').value;
             const inspectionType = document.getElementById('incomingInspectionType').value;
             const inspector = document.getElementById('incomingInspector').value;
             const category = 'incoming';
 
-            await startInspection(powderName, lotNumber, inspectionType, inspector, category);
+            await startInspection(powderName, lotNumber, inspectionType, inspector, category, inspectionDate);
         });
         }
 
@@ -337,12 +472,12 @@ function updateLanguage() {
         }
 
         // 검사 시작 공통 함수
-        async function startInspection(powderName, lotNumber, inspectionType, inspector, category) {
+        async function startInspection(powderName, lotNumber, inspectionType, inspector, category, inspectionDate = null) {
             try {
                 const response = await fetch(`${API_BASE}/api/start-inspection`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ powderName, lotNumber, inspectionType, inspector, category })
+                    body: JSON.stringify({ powderName, lotNumber, inspectionType, inspector, category, inspectionDate })
                 });
 
                 const data = await response.json();
@@ -391,10 +526,35 @@ function updateLanguage() {
             }
         }
 
-        function showInspectionPage() {
+        async function showInspectionPage() {
             document.getElementById('infoPowderName').textContent = currentInspection.powderName;
             document.getElementById('infoLotNumber').textContent = currentInspection.lotNumber;
-            document.getElementById('infoInspector').textContent = currentInspection.inspector;
+            document.getElementById('infoInspectionDate').textContent = currentInspection.inspectionDate || '-';
+
+            // 검사자 표시 영역 설정 (category에 따라 다르게)
+            const inspectorDisplay = document.getElementById('inspectorDisplay');
+            const category = currentInspection.category || 'incoming';
+
+            if (category === 'incoming') {
+                // 수입검사: 검사자를 표시만 (수정 불가)
+                const inspectorName = currentInspection.inspector || '미지정';
+                inspectorDisplay.innerHTML = `<p style="font-size: 1.1em; font-weight: 600; color: white;">${inspectorName}</p>`;
+            } else if (category === 'mixing') {
+                // 배합검사: 검사자를 선택할 수 있음
+                // 먼저 select 요소 생성
+                inspectorDisplay.innerHTML = `
+                    <select id="infoInspector" onchange="updateInspector()" style="font-size: 1.1em; font-weight: 600; padding: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); color: #000; border-radius: 6px; cursor: pointer; width: 100%;">
+                        <option value="">선택하세요</option>
+                    </select>
+                `;
+
+                // select가 생성된 후 검사자 목록 로드
+                await loadInspectorListForInspection();
+                const inspectorSelect = document.getElementById('infoInspector');
+                if (inspectorSelect && currentInspection.inspector) {
+                    inspectorSelect.value = currentInspection.inspector;
+                }
+            }
 
             const completed = currentInspection.completedItems || [];
             const total = currentInspection.totalItems || [];
@@ -402,6 +562,65 @@ function updateLanguage() {
 
             renderInspectionItems();
             showPage('inspection');
+        }
+
+        // 검사 진행 화면용 검사자 목록 로드
+        async function loadInspectorListForInspection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/inspector-list`);
+                const result = await response.json();
+
+                const select = document.getElementById('infoInspector');
+                if (!select) return;
+
+                // 기존 옵션 유지하고 검사자 목록 추가
+                select.innerHTML = '<option value="">선택하세요</option>';
+
+                if (result.success && result.data) {
+                    result.data.forEach(inspectorName => {
+                        const option = document.createElement('option');
+                        option.value = inspectorName;
+                        option.textContent = inspectorName;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('검사자 목록 로딩 실패:', error);
+            }
+        }
+
+        // 검사자 변경
+        async function updateInspector() {
+            const newInspector = document.getElementById('infoInspector').value;
+
+            if (!newInspector) {
+                alert('검사자를 선택하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/update-inspector`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        powderName: currentInspection.powderName,
+                        lotNumber: currentInspection.lotNumber,
+                        inspector: newInspector,
+                        category: currentInspection.category || 'incoming'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentInspection.inspector = newInspector;
+                    alert('검사자가 변경되었습니다.');
+                } else {
+                    alert('검사자 변경 실패: ' + data.message);
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
         }
 
         function renderInspectionItems() {
@@ -462,7 +681,7 @@ function updateLanguage() {
                     `;
                 });
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 20px;\"><button class="btn" onclick="judgeParticleSize('${item.name}')" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveParticleSize('${item.name}')" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 20px;\"><button class="btn" onclick="judgeParticleSize('${item.name}')" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveParticleSize('${item.name}')" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
 
@@ -497,7 +716,7 @@ function updateLanguage() {
                     `;
                 }
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', true)" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', true)" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', true)" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', true)" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
 
@@ -513,7 +732,7 @@ function updateLanguage() {
                     `;
                 }
                 html += '</div>';
-                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', false)" style="flex:1;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', false)" style="flex:1;" disabled>💾 최종저장</button></div>`;
+                html += `<div style="display: flex; gap:8px; margin-top: 10px;\"><button class="btn" onclick="judgeItem('${item.name}', false)" style="flex:1; background:#FF9800;">🔎 판정</button><button class="btn" id="final-save-${item.name}" onclick="finalSaveItem('${item.name}', false)" style="flex:1; background:#2196F3;" disabled>💾 최종저장</button></div>`;
                 html += '<div class="result-display" id="result-' + item.name + '" style="display:none; margin-top: 15px;"></div>';
                 container.innerHTML = html;
             }
@@ -931,7 +1150,12 @@ function updateLanguage() {
                                 <td>${item.inspection_time}</td>
                                 <td>${item.inspection_type}</td>
                                 <td><span class="badge ${badgeClass}">${item.final_result}</span></td>
-                                <td><button class="btn" onclick="viewDetail('${item.powder_name}', '${item.lot_number}')">${t('view')}</button></td>
+                                <td>
+                                    <div style="display: flex; gap: 5px;">
+                                        <button class="btn" onclick="viewDetail('${item.powder_name}', '${item.lot_number}')" style="padding: 6px 12px; font-size: 0.9em;">${t('view')}</button>
+                                        <button class="btn danger" onclick="deleteInspectionResult('${item.powder_name}', '${item.lot_number}', '${item.category}')" style="padding: 6px 12px; font-size: 0.9em; background:#f44336; color:white;">삭제</button>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     });
@@ -957,6 +1181,35 @@ function updateLanguage() {
                     showPage('detail');
                 } else {
                     alert('상세 정보 로딩 실패: ' + data.message);
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        async function deleteInspectionResult(powderName, lotNumber, category) {
+            // 관리자 비밀번호 확인
+            const password = prompt(`검사결과를 삭제하시겠습니까?\n분말명: ${powderName}\nLOT: ${lotNumber}\n\n관리자 비밀번호를 입력하세요:`);
+
+            if (!password) {
+                return; // 취소
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/inspection-result/${encodeURIComponent(powderName)}/${encodeURIComponent(lotNumber)}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: password, category: category })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('검사 결과가 삭제되었습니다.');
+                    // 검색 폼 다시 제출하여 목록 새로고침
+                    document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+                } else {
+                    alert('삭제 실패: ' + data.message);
                 }
             } catch (error) {
                 alert('오류: ' + error.message);
@@ -1128,23 +1381,32 @@ function updateLanguage() {
                         item.className = 'powder-item';
                         item.dataset.specId = spec.id;
                         item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">` +
-                            `<div><strong>${spec.powder_name}</strong><div style="font-size:0.85em;color:#666;">${spec.category === 'incoming' ? t('incoming') : t('mixing')}</div></div>` +
+                            `<div style="flex: 1;" class="powder-name-text"><strong>${spec.powder_name}</strong></div>` +
+                            `<input type="checkbox" class="powder-checkbox" data-spec-id="${spec.id}" style="cursor: pointer; margin-left: 8px;">` +
                             `</div>`;
 
-                        item.addEventListener('click', () => {
-                            document.querySelectorAll('.vertical-list .powder-item').forEach(el => el.classList.remove('active'));
-                            item.classList.add('active');
-                            showPowderSpecDetail(spec.id);
+                        // 체크박스 클릭 시만 우측 화면 변경
+                        const checkbox = item.querySelector('.powder-checkbox');
+                        checkbox.addEventListener('change', (e) => {
+                            // 다른 모든 체크박스 해제
+                            document.querySelectorAll('.powder-checkbox').forEach(cb => {
+                                if (cb !== checkbox) cb.checked = false;
+                            });
+
+                            // 체크된 경우에만 우측 화면 표시
+                            if (checkbox.checked) {
+                                showPowderSpecDetail(spec.id);
+                            }
                         });
 
                         namesDiv.appendChild(item);
                     });
 
-                    // 자동 선택
-                    const first = namesDiv.querySelector('.powder-item');
-                    if (first) {
-                        first.classList.add('active');
-                        const firstId = first.dataset.specId;
+                    // 자동 선택: 첫 번째 체크박스 체크
+                    const firstCheckbox = namesDiv.querySelector('.powder-checkbox');
+                    if (firstCheckbox) {
+                        firstCheckbox.checked = true;
+                        const firstId = firstCheckbox.dataset.specId;
                         showPowderSpecDetail(parseInt(firstId));
                     }
                 } else {
@@ -1170,49 +1432,257 @@ function updateLanguage() {
 
                 selectedPowderSpecId = spec.id;
 
-                const activeItems = [];
-                if (spec.flow_rate_type !== '비활성' && (spec.flow_rate_min || spec.flow_rate_max)) activeItems.push(t('flowRate') + `: ${spec.flow_rate_min || '-'}~${spec.flow_rate_max || '-'}`);
-                if (spec.apparent_density_type !== '비활성' && (spec.apparent_density_min || spec.apparent_density_max)) activeItems.push(t('apparentDensity'));
-                if (spec.c_content_type !== '비활성' && (spec.c_content_min || spec.c_content_max)) activeItems.push(t('cContent'));
-                if (spec.cu_content_type !== '비활성' && (spec.cu_content_min || spec.cu_content_max)) activeItems.push(t('cuContent'));
-                if (spec.moisture_type !== '비활성' && (spec.moisture_min || spec.moisture_max)) activeItems.push(t('moisture'));
-                if (spec.ash_type !== '비활성' && (spec.ash_min || spec.ash_max)) activeItems.push(t('ash'));
-                if (spec.sinter_change_rate_type !== '비활성' && (spec.sinter_change_rate_min || spec.sinter_change_rate_max)) activeItems.push(t('sinterChangeRate'));
-                if (spec.sinter_strength_type !== '비활성' && (spec.sinter_strength_min || spec.sinter_strength_max)) activeItems.push(t('sinterStrength'));
-                if (spec.forming_strength_type !== '비활성' && (spec.forming_strength_min || spec.forming_strength_max)) activeItems.push(t('formingStrength'));
-                if (spec.forming_load_type !== '비활성' && (spec.forming_load_min || spec.forming_load_max)) activeItems.push(t('formingLoad'));
-                if (spec.particle_size_type !== '비활성') activeItems.push(t('particleSize'));
-
                 const detailDiv = document.getElementById('powderSpecDetail');
-                let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">`;
-                html += `<div style="padding:12px;background:#fafafa;border-radius:6px;">`;
-                html += `<h4 style="margin-top:0;">${spec.powder_name}</h4>`;
-                html += `<p style="color:#666;margin:6px 0;">${spec.category === 'incoming' ? t('incoming') : t('mixing')}</p>`;
-                html += `<p style="margin-top:8px;font-weight:600;">설정된 항목</p>`;
-                html += `<ul style="margin-top:8px;padding-left:16px;color:#444;">`;
-                if (activeItems.length > 0) activeItems.forEach(i => { html += `<li style="margin-bottom:6px;">${i}</li>`; });
-                else html += `<li>${t('noConfig')}</li>`;
-                html += `</ul></div>`;
+                const headerDiv = document.getElementById('powderSpecHeader');
 
-                html += `<div style="padding:12px;background:#fff;border-radius:6px;border:1px solid #f0f0f0;">`;
-                html += `<h4 style="margin-top:0;">세부 값</h4>`;
-                html += `<div style="font-size:0.95em;color:#333;">`;
-                html += `<p>Flow rate: ${spec.flow_rate_min || '-'} ~ ${spec.flow_rate_max || '-' } (${spec.flow_rate_type || '-'})</p>`;
-                html += `<p>Apparent density: ${spec.apparent_density_min || '-'} ~ ${spec.apparent_density_max || '-'} (${spec.apparent_density_type || '-'})</p>`;
-                html += `<p>C content: ${spec.c_content_min || '-'} ~ ${spec.c_content_max || '-'} (${spec.c_content_type || '-'})</p>`;
-                html += `<p>Cu content: ${spec.cu_content_min || '-'} ~ ${spec.cu_content_max || '-'} (${spec.cu_content_type || '-'})</p>`;
-                html += `</div></div>`;
+                // 헤더: 분말명(왼쪽) + 수정/삭제 버튼(오른쪽)
+                headerDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; color: #333; font-size: 1.3em;">${spec.powder_name}</h3>
+                        <div>
+                            <button class="btn secondary" id="specEditBtn" style="margin-right:6px; padding:5px 12px; font-size:0.85em;">수정</button>
+                            <button class="btn danger" id="specDeleteBtn" style="padding:5px 12px; font-size:0.85em;">삭제</button>
+                        </div>
+                    </div>
+                `;
+
+                let html = `<div style="overflow-x: auto;">`;
+                html += `<table id="specTable" style="width: 100%; border-collapse: collapse; font-size: 1em; table-layout: fixed;" data-spec-id="${spec.id}" data-powder-name="${spec.powder_name}" data-category="${spec.category}">`;
+                html += `<thead>`;
+                html += `<tr style="background: #f8f9fa;">`;
+                html += `<th style="width: 22%; padding: 12px 14px; text-align: left; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">검사항목</th>`;
+                html += `<th style="width: 15%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">단위</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">최소값</th>`;
+                html += `<th style="width: 18%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">최대값</th>`;
+                html += `<th style="width: 27%; padding: 12px 14px; text-align: center; border: 1px solid #e0e0e0; font-weight: 600; font-size: 1em; color: #444; white-space: nowrap;">검사타입</th>`;
+                html += `</tr>`;
+                html += `</thead>`;
+                html += `<tbody>`;
+
+                // 각 검사항목을 행으로 추가
+                const items = [
+                    { name: '유동도', field: 'flow_rate', unit: 's/50g', min: spec.flow_rate_min, max: spec.flow_rate_max, type: spec.flow_rate_type },
+                    { name: '겉보기밀도', field: 'apparent_density', unit: 'g/cm³', min: spec.apparent_density_min, max: spec.apparent_density_max, type: spec.apparent_density_type },
+                    { name: 'C함량', field: 'c_content', unit: '%', min: spec.c_content_min, max: spec.c_content_max, type: spec.c_content_type },
+                    { name: 'Cu함량', field: 'cu_content', unit: '%', min: spec.cu_content_min, max: spec.cu_content_max, type: spec.cu_content_type },
+                    { name: '수분도', field: 'moisture', unit: '%', min: spec.moisture_min, max: spec.moisture_max, type: spec.moisture_type },
+                    { name: '회분도', field: 'ash', unit: '%', min: spec.ash_min, max: spec.ash_max, type: spec.ash_type },
+                    { name: '소결변화율', field: 'sinter_change_rate', unit: '%', min: spec.sinter_change_rate_min, max: spec.sinter_change_rate_max, type: spec.sinter_change_rate_type },
+                    { name: '소결강도', field: 'sinter_strength', unit: 'MPa', min: spec.sinter_strength_min, max: spec.sinter_strength_max, type: spec.sinter_strength_type },
+                    { name: '성형강도', field: 'forming_strength', unit: 'N', min: spec.forming_strength_min, max: spec.forming_strength_max, type: spec.forming_strength_type },
+                    { name: '성형하중', field: 'forming_load', unit: 'MPa', min: spec.forming_load_min, max: spec.forming_load_max, type: spec.forming_load_type },
+                    { name: '입도분석', field: 'particle_size', unit: '', min: '', max: '', type: spec.particle_size_type }
+                ];
+
+                items.forEach(item => {
+                    const isInactive = item.type === '비활성' || !item.type;
+                    const rowStyle = isInactive ? 'opacity: 0.45;' : '';
+                    html += `<tr data-field="${item.field}" style="${rowStyle}">`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; white-space: nowrap;"><strong style="font-weight: 600;">${item.name}</strong></td>`;
+                    html += `<td style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;">${item.unit}</td>`;
+                    html += `<td class="editable-min" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.min || ''}">${item.min || '-'}</td>`;
+                    html += `<td class="editable-max" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.max || ''}">${item.max || '-'}</td>`;
+                    html += `<td class="editable-type" style="padding: 10px 14px; border: 1px solid #e8e8e8; text-align: center; white-space: nowrap;" data-value="${item.type || '비활성'}">${item.type || '비활성'}</td>`;
+                    html += `</tr>`;
+                });
+
+                html += `</tbody>`;
+                html += `</table>`;
                 html += `</div>`;
+
+                // 입도분석 상세 정보 (활성화된 경우)
+                if (spec.particle_size_type && spec.particle_size_type !== '비활성') {
+                    // particle_size 테이블에서 데이터 가져오기
+                    try {
+                        const particleResponse = await fetch(`${API_BASE}/api/particle-size-spec/${spec.powder_name}`);
+                        const particleData = await particleResponse.json();
+
+                        if (particleData.success && particleData.data.length > 0) {
+                            html += `<div id="particleDetailSection" style="margin-top: 14px; padding: 12px; background: #f8f9fb; border-radius: 6px; border: 1px solid #e5e7eb;">`;
+                            html += `<h5 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.95em; font-weight: 600;">📊 입도분석 상세</h5>`;
+                            html += `<div id="particleGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">`;
+
+                            // particle_size 테이블 데이터를 순회하며 표시
+                            particleData.data.forEach(p => {
+                                html += `<div class="particle-item" data-mesh="${p.mesh_size}" data-min="${p.min_value || ''}" data-max="${p.max_value || ''}" style="padding: 7px 9px; background: white; border-radius: 4px; font-size: 0.88em; border: 1px solid #e8e8e8;">`;
+                                html += `<strong style="font-weight: 600;">${p.mesh_size}</strong>: `;
+                                html += `<span class="particle-min">${p.min_value || '-'}</span> ~ <span class="particle-max">${p.max_value || '-'}</span> %`;
+                                html += `</div>`;
+                            });
+
+                            html += `</div>`;
+                            html += `</div>`;
+                        }
+                    } catch (err) {
+                        console.error('입도분석 데이터 로딩 실패:', err);
+                    }
+                }
 
                 detailDiv.innerHTML = html;
 
                 const editBtn = document.getElementById('specEditBtn');
                 const delBtn = document.getElementById('specDeleteBtn');
-                if (editBtn) editBtn.onclick = () => editPowderSpec(spec.id);
+                if (editBtn) editBtn.onclick = () => toggleInlineEdit();
                 if (delBtn) delBtn.onclick = () => deletePowderSpec(spec.id, spec.powder_name);
 
             } catch (error) {
                 console.error('사양 상세 로딩 실패:', error);
+            }
+        }
+
+        // 인라인 편집 모드 전역 변수
+        let isInlineEditMode = false;
+
+        function toggleInlineEdit() {
+            const editBtn = document.getElementById('specEditBtn');
+            if (!isInlineEditMode) {
+                enableInlineEdit();
+                editBtn.textContent = '저장';
+                editBtn.classList.remove('secondary');
+                editBtn.classList.add('primary');
+                isInlineEditMode = true;
+            } else {
+                saveInlineEdit();
+            }
+        }
+
+        function enableInlineEdit() {
+            const table = document.getElementById('specTable');
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const minCell = row.querySelector('.editable-min');
+                const maxCell = row.querySelector('.editable-max');
+                const typeCell = row.querySelector('.editable-type');
+
+                if (minCell) {
+                    const minValue = minCell.dataset.value;
+                    minCell.innerHTML = `<input type="number" step="0.01" value="${minValue}" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (maxCell) {
+                    const maxValue = maxCell.dataset.value;
+                    maxCell.innerHTML = `<input type="number" step="0.01" value="${maxValue}" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (typeCell) {
+                    const typeValue = typeCell.dataset.value;
+                    typeCell.innerHTML = `
+                        <select style="width:100%; padding:4px; border:1px solid #ddd; border-radius:3px;">
+                            <option value="일상" ${typeValue === '일상' ? 'selected' : ''}>일상</option>
+                            <option value="정기" ${typeValue === '정기' ? 'selected' : ''}>정기</option>
+                            <option value="비활성" ${typeValue === '비활성' ? 'selected' : ''}>비활성</option>
+                        </select>
+                    `;
+                }
+            });
+
+            // 입도분석 항목도 편집 가능하게 만들기
+            const particleItems = document.querySelectorAll('.particle-item');
+            particleItems.forEach(item => {
+                const minValue = item.dataset.min || '';
+                const maxValue = item.dataset.max || '';
+                const meshSize = item.dataset.mesh;
+
+                const minSpan = item.querySelector('.particle-min');
+                const maxSpan = item.querySelector('.particle-max');
+
+                if (minSpan) {
+                    minSpan.innerHTML = `<input type="number" step="0.01" value="${minValue}" style="width:60px; padding:2px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+
+                if (maxSpan) {
+                    maxSpan.innerHTML = `<input type="number" step="0.01" value="${maxValue}" style="width:60px; padding:2px; border:1px solid #ddd; border-radius:3px; text-align:center;">`;
+                }
+            });
+        }
+
+        async function saveInlineEdit() {
+            const table = document.getElementById('specTable');
+            if (!table) return;
+
+            const specId = table.dataset.specId;
+            const powderName = table.dataset.powderName;
+            const category = table.dataset.category;
+            const rows = table.querySelectorAll('tbody tr');
+
+            const data = {
+                id: specId,
+                powder_name: powderName,
+                category: category
+            };
+
+            rows.forEach(row => {
+                const field = row.dataset.field;
+                const minCell = row.querySelector('.editable-min input');
+                const maxCell = row.querySelector('.editable-max input');
+                const typeCell = row.querySelector('.editable-type select');
+
+                if (minCell) data[`${field}_min`] = minCell.value || null;
+                if (maxCell) data[`${field}_max`] = maxCell.value || null;
+                if (typeCell) data[`${field}_type`] = typeCell.value;
+            });
+
+            try {
+                // 1. 분말 사양 저장
+                const response = await fetch(`${API_BASE}/api/admin/powder-spec/${specId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    alert('저장 실패: ' + (result.message || '알 수 없는 오류'));
+                    return;
+                }
+
+                // 2. 입도분석 데이터 저장 (있는 경우)
+                const particleItems = document.querySelectorAll('.particle-item');
+                if (particleItems.length > 0) {
+                    const particleSpecs = [];
+                    particleItems.forEach(item => {
+                        const meshSize = item.dataset.mesh;
+                        const minInput = item.querySelector('.particle-min input');
+                        const maxInput = item.querySelector('.particle-max input');
+
+                        if (minInput && maxInput) {
+                            particleSpecs.push({
+                                powder_name: powderName,
+                                mesh_size: meshSize,
+                                min_value: parseFloat(minInput.value) || 0,
+                                max_value: parseFloat(maxInput.value) || 0
+                            });
+                        }
+                    });
+
+                    if (particleSpecs.length > 0) {
+                        const particleResponse = await fetch(`${API_BASE}/api/admin/particle-size/bulk`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                powder_name: powderName,
+                                specs: particleSpecs
+                            })
+                        });
+
+                        const particleResult = await particleResponse.json();
+                        if (!particleResult.success) {
+                            alert('입도분석 저장 실패: ' + (particleResult.message || '알 수 없는 오류'));
+                            return;
+                        }
+                    }
+                }
+
+                alert('저장되었습니다.');
+                isInlineEditMode = false;
+                // 다시 로드
+                showPowderSpecDetail(parseInt(specId));
+
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장 중 오류가 발생했습니다.');
             }
         }
 
@@ -1246,6 +1716,9 @@ function updateLanguage() {
             }, 0);
 
             document.getElementById('powderFormContainer').style.display = 'block';
+            // 리스트 화면 숨기기
+            const layoutDiv = document.querySelector('.admin-powder-layout');
+            if (layoutDiv) layoutDiv.style.display = 'none';
         }
 
         function toggleParticleInputs() {
@@ -1307,6 +1780,9 @@ function updateLanguage() {
         function hidePowderForm() {
             document.getElementById('powderFormContainer').style.display = 'none';
             document.getElementById('powderForm').reset();
+            // 리스트 화면 다시 보이기
+            const layoutDiv = document.querySelector('.admin-powder-layout');
+            if (layoutDiv) layoutDiv.style.display = 'flex';
         }
 
         async function editPowderSpec(specId) {
@@ -1401,6 +1877,9 @@ function updateLanguage() {
                         }
 
                         document.getElementById('powderFormContainer').style.display = 'block';
+                        // 리스트 화면 숨기기
+                        const layoutDiv = document.querySelector('.admin-powder-layout');
+                        if (layoutDiv) layoutDiv.style.display = 'none';
                     }
                 }
             } catch (error) {
@@ -1518,7 +1997,7 @@ function updateLanguage() {
 
                     alert('저장되었습니다.');
                     hidePowderForm();
-                    loadPowderSpecs();
+                    loadPowderSpecs(powderSpecMode);
                     loadParticlePowderList();
                     // 검사 페이지의 분말 목록도 갱신
                     loadPowderList('incoming');
@@ -1544,7 +2023,7 @@ function updateLanguage() {
 
                 if (data.success) {
                     alert('삭제되었습니다.');
-                    loadPowderSpecs();
+                    loadPowderSpecs(powderSpecMode);
                     loadParticlePowderList();
                 } else {
                     alert('삭제 실패: ' + data.message);
@@ -1913,61 +2392,87 @@ function updateLanguage() {
                 const listDiv = document.getElementById('productList');
 
                 if (data.success && data.data.length > 0) {
-                    let html = '';
+                    let html = '<table class="data-table" style="width:100%"><thead><tr><th>제품명</th><th>제품코드</th><th>작업</th></tr></thead><tbody>';
 
-                    data.data.forEach(product => {
+                    data.data.forEach((product, index) => {
                         const totalRatio = product.recipes.reduce((sum, r) => sum + parseFloat(r.ratio || 0), 0);
+                        const productNameEscaped = product.product_name.replace(/'/g, "\\'");
 
                         html += `
-                            <div class="card" style="margin-bottom: 15px; border-left: 4px solid #667eea;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div>
-                                        <h3 style="margin: 0;">${product.product_name}</h3>
-                                        ${product.product_code ? `<small style="color: #666;">${t('productCode')}: ${product.product_code}</small>` : ''}
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn primary" onclick="editProduct('${product.product_name}')" style="padding: 8px 12px;">${t('edit')}</button>
-                                        <button class="btn danger" onclick="deleteProduct('${product.product_name}')" style="padding: 8px 12px;">${t('delete')}</button>
-                                    </div>
-                                </div>
-
-                                <table style="width: 100%; font-size: 0.9em;">
-                                    <tr>
-                                        <th>${t('powderName')}</th>
-                                        <th>${t('category')}</th>
-                                        <th>${t('ratio')} (%)</th>
-                                        <th>${t('tolerance')} (%)</th>
-                                    </tr>`;
+                            <tr>
+                                <td style="padding: 12px;">${product.product_name}</td>
+                                <td style="padding: 12px;">${product.product_code || '-'}</td>
+                                <td style="padding: 12px;">
+                                    <button class="btn" onclick="toggleProductDetail('${productNameEscaped}', ${index})" id="viewBtn_${index}" style="padding: 6px 12px; margin-right: 5px; background: #2196F3;">조회</button>
+                                    <button class="btn primary" onclick="editProduct('${productNameEscaped}')" style="padding: 6px 12px; margin-right: 5px;">수정</button>
+                                    <button class="btn danger" onclick="deleteProduct('${productNameEscaped}')" style="padding: 6px 12px;">삭제</button>
+                                </td>
+                            </tr>
+                            <tr id="detailRow_${index}" style="display: none;">
+                                <td colspan="3" style="padding: 0; background: #f8f9fa;">
+                                    <div style="padding: 20px; border-left: 4px solid #667eea;">
+                                        <h4 style="margin: 0 0 15px 0; color: #667eea;">배합 구성</h4>
+                                        <table style="width: 100%; font-size: 0.9em;">
+                                            <tr style="background: #e3f2fd;">
+                                                <th style="padding: 10px;">${t('powderName')}</th>
+                                                <th style="padding: 10px;">${t('category')}</th>
+                                                <th style="padding: 10px;">${t('ratio')} (%)</th>
+                                                <th style="padding: 10px;">${t('tolerance')} (%)</th>
+                                                <th style="padding: 10px;">Main</th>
+                                            </tr>`;
 
                         product.recipes.forEach(recipe => {
                             const categoryBadge = recipe.powder_category === 'incoming'
                                 ? `<span class="badge" style="background: #2196F3;">${t('incoming')}</span>`
                                 : `<span class="badge" style="background: #FF9800;">${t('mixing')}</span>`;
 
+                            const isMainBadge = recipe.is_main
+                                ? '<span style="color: #FF5722; font-weight: 600;">✓</span>'
+                                : '-';
+
                             html += `
                                 <tr>
-                                    <td>${recipe.powder_name}</td>
-                                    <td>${categoryBadge}</td>
-                                    <td>${formatTwo(recipe.ratio)}%</td>
-                                    <td>±${formatTwo(recipe.tolerance_percent)}%</td>
+                                    <td style="padding: 8px;">${recipe.powder_name}</td>
+                                    <td style="padding: 8px;">${categoryBadge}</td>
+                                    <td style="padding: 8px;">${formatTwo(recipe.ratio)}%</td>
+                                    <td style="padding: 8px;">±${formatTwo(recipe.tolerance_percent)}%</td>
+                                    <td style="padding: 8px; text-align: center;">${isMainBadge}</td>
                                 </tr>`;
                         });
 
                         html += `
-                                    <tr style="font-weight: bold; background: #f5f5f5;">
-                                        <td>${t('totalRatio')}</td>
-                                        <td colspan="3">${totalRatio.toFixed(2)}%</td>
-                                    </tr>
-                                </table>
-                            </div>`;
+                                            <tr style="font-weight: bold; background: #f5f5f5;">
+                                                <td style="padding: 10px;">${t('totalRatio')}</td>
+                                                <td colspan="4" style="padding: 10px;">${totalRatio.toFixed(2)}%</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>`;
                     });
 
+                    html += '</tbody></table>';
                     listDiv.innerHTML = html;
                 } else {
                     listDiv.innerHTML = `<div class="empty-message">${t('noProducts')}</div>`;
                 }
             } catch (error) {
                 console.error('Recipe 목록 로딩 실패:', error);
+            }
+        }
+
+        function toggleProductDetail(productName, index) {
+            const detailRow = document.getElementById(`detailRow_${index}`);
+            const viewBtn = document.getElementById(`viewBtn_${index}`);
+
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+                viewBtn.textContent = '닫기';
+                viewBtn.style.background = '#FF5722';
+            } else {
+                detailRow.style.display = 'none';
+                viewBtn.textContent = '조회';
+                viewBtn.style.background = '#2196F3';
             }
         }
 
@@ -2033,8 +2538,17 @@ function updateLanguage() {
                     }
                 }
 
+                // 폼을 해당 제품 card 바로 아래로 이동
+                const formContainer = document.getElementById('productFormContainer');
+                const productCard = document.querySelector(`.product-card[data-product-name="${productName}"]`);
+
+                if (productCard && formContainer) {
+                    // 폼을 productCard 바로 다음에 삽입
+                    productCard.insertAdjacentElement('afterend', formContainer);
+                }
+
                 // 폼 표시
-                document.getElementById('productFormContainer').style.display = 'block';
+                formContainer.style.display = 'block';
 
             } catch (error) {
                 alert('오류: ' + error.message);
@@ -2074,7 +2588,7 @@ function updateLanguage() {
                     </div>
                     <div class="form-group">
                         <label>${t('tolerance')} (%) *</label>
-                        <input type="number" step="0.01" class="recipe-tolerance" required placeholder="0.50" value="0.50">
+                        <input type="number" step="0.01" class="recipe-tolerance" required placeholder="0.05" value="0.05">
                     </div>
                     <div class="form-group" style="display: flex; align-items: end;">
                         <label style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; cursor: pointer;">
@@ -2257,6 +2771,95 @@ function updateLanguage() {
                 if (typeof loadBlendingOrdersForBlending === 'function') {
                     await loadBlendingOrdersForBlending();
                 }
+
+                // 진행중인 배합작업 목록 로드
+                await loadInProgressBlendingWorks();
+        }
+
+        // --------------------------------------------
+        // 진행중인 배합작업 목록 로드
+        // --------------------------------------------
+        async function loadInProgressBlendingWorks() {
+            try {
+                const response = await fetch(`${API_BASE}/api/blending/works?status=in_progress`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('inProgressBlendingWorks');
+                if (!tbody) return;
+
+                if (!data.success || !data.works || data.works.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-message">진행중인 배합작업이 없습니다.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.works.map(work => {
+                    const startTime = work.start_time ? new Date(work.start_time).toLocaleString('ko-KR') : '-';
+
+                    // 진행률 계산 (투입된 원재료 수 / 전체 원재료 수)
+                    const progress = work.material_input_count || 0;
+                    const total = work.total_materials || 0;
+                    const progressPercent = total > 0 ? Math.round((progress / total) * 100) : 0;
+
+                    return `
+                        <tr>
+                            <td>${work.work_order || '-'}</td>
+                            <td>${work.product_name}</td>
+                            <td><strong>${work.batch_lot}</strong></td>
+                            <td>${work.operator || '-'}</td>
+                            <td>${startTime}</td>
+                            <td>${progress}/${total} (${progressPercent}%)</td>
+                            <td>
+                                <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending')" style="padding: 6px 12px; font-size: 0.9em; background:#4CAF50; color:white; border:none; border-radius:4px; margin-right: 5px;">
+                                    작업 계속
+                                </button>
+                                <button class="btn danger" onclick="deleteBlendingWork(${work.id})" style="padding: 6px 12px; font-size: 0.9em;">
+                                    삭제
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('진행중인 배합작업 로드 실패:', error);
+                const tbody = document.getElementById('inProgressBlendingWorks');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-message">오류 발생: ' + error.message + '</td></tr>';
+                }
+            }
+        }
+
+        // --------------------------------------------
+        // 진행중인 배합작업 삭제
+        // --------------------------------------------
+        async function deleteBlendingWork(workId) {
+            if (!confirm('이 배합작업을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) {
+                return;
+            }
+
+            const adminPassword = prompt('관리자 비밀번호를 입력하세요:');
+            if (!adminPassword) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/blending/work/${workId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: adminPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await loadInProgressBlendingWorks(); // 목록 먼저 새로고침
+                    alert('배합작업이 삭제되었습니다.');
+                } else {
+                    alert('삭제 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('배합작업 삭제 오류:', error);
+                alert('삭제 중 오류가 발생했습니다: ' + error.message);
+            }
         }
 
         // --------------------------------------------
@@ -2279,6 +2882,26 @@ function updateLanguage() {
 
                 data.works.forEach(work => {
                     const endTime = work.end_time ? new Date(work.end_time).toLocaleString('ko-KR') : '-';
+
+                    // 검사 상태에 따라 버튼/아이콘 표시
+                    let actionHtml = '';
+                    if (work.inspection_status === 'completed') {
+                        // 검사 완료된 경우
+                        if (work.inspection_result === 'pass') {
+                            actionHtml = '<span style="font-size:24px;color:#4CAF50;">✅</span> <span style="color:#4CAF50;font-weight:600;">합격</span>';
+                        } else if (work.inspection_result === 'fail') {
+                            actionHtml = '<span style="font-size:24px;color:#F44336;">❌</span> <span style="color:#F44336;font-weight:600;">불합격</span>';
+                        } else {
+                            actionHtml = '<span style="color:#666;">검사완료</span>';
+                        }
+                    } else if (work.inspection_status === 'in_progress') {
+                        // 검사 진행 중 - 이어하기 버튼 표시
+                        actionHtml = `<button class="btn" onclick="continueInspection('${work.product_name}', '${work.batch_lot}', 'mixing')" style="padding:6px 10px; background:#FFC107; color:#000;">⏳ 검사 이어하기</button>`;
+                    } else {
+                        // 검사 미시작
+                        actionHtml = `<button class="btn primary" onclick="startBlendingInspectionFromMixing('${work.batch_lot}', '${work.product_name}')" style="padding:6px 10px;">🔧 배합검사</button>`;
+                    }
+
                     html += `
                         <tr>
                             <td>${work.work_order || '-'}</td>
@@ -2286,9 +2909,7 @@ function updateLanguage() {
                             <td><strong>${work.batch_lot}</strong></td>
                             <td>${work.operator || '-'}</td>
                             <td>${endTime}</td>
-                            <td>
-                                <button class="btn primary" onclick="startBlendingInspectionFromMixing('${work.batch_lot}', '${work.product_name}')" style="padding:6px 10px;">배합검사</button>
-                            </td>
+                            <td>${actionHtml}</td>
                         </tr>
                     `;
                 });
@@ -2363,11 +2984,37 @@ function updateLanguage() {
         function hideBlendingForm() {
             const card = document.getElementById('blendingFormCard');
             if (card) card.style.display = 'none';
+
+            // 목록 카드들 다시 표시
+            const orderListCard = document.getElementById('blendingOrderListCard');
+            const inProgressCard = document.getElementById('inProgressWorksCard');
+            const backBtn = document.getElementById('backToOrderListBtn');
+
+            if (orderListCard) orderListCard.style.display = 'block';
+            if (inProgressCard) inProgressCard.style.display = 'block';
+            if (backBtn) backBtn.style.display = 'none';
         }
 
         function showBlendingForm() {
             const card = document.getElementById('blendingFormCard');
             if (card) card.style.display = 'block';
+
+            // 목록 카드들 숨기기
+            const orderListCard = document.getElementById('blendingOrderListCard');
+            const inProgressCard = document.getElementById('inProgressWorksCard');
+            const backBtn = document.getElementById('backToOrderListBtn');
+
+            if (orderListCard) orderListCard.style.display = 'none';
+            if (inProgressCard) inProgressCard.style.display = 'none';
+            if (backBtn) backBtn.style.display = 'block';
+        }
+
+        function showOrderListView() {
+            // 폼 숨기고 목록 표시
+            hideBlendingForm();
+            // 폼 초기화
+            const form = document.getElementById('blendingForm');
+            if (form) form.reset();
         }
 
         async function loadProductsForBlending() {
@@ -2696,8 +3343,8 @@ function updateLanguage() {
 
                 if (data.success) {
                     alert(`배합 작업이 시작되었습니다.\n배합 LOT: ${data.batch_lot}`);
-                    // 원재료 투입 페이지로 이동
-                    loadMaterialInputPage(data.work_id);
+                    // 원재료 투입 페이지로 이동 (배합작업 메뉴에서 시작)
+                    loadMaterialInputPage(data.work_id, 'blending');
                 } else {
                     alert('작업 시작 실패: ' + data.message);
                 }
@@ -2714,8 +3361,18 @@ function updateLanguage() {
         let currentBlendingWork = null;
         let currentBlendingRecipes = [];
         let currentMaterialInputs = [];
+        let materialInputSourcePage = 'blending'; // 진입한 페이지 추적 ('blending' 또는 'blending-log')
 
-        async function loadMaterialInputPage(workId) {
+        async function loadMaterialInputPage(workId, sourcePage = 'blending') {
+            materialInputSourcePage = sourcePage;
+
+            // 바코드 라벨 패널 초기화
+            hideLabelPanel();
+            const labelList = document.getElementById('labelList');
+            if (labelList) {
+                labelList.innerHTML = '';
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
                 const data = await response.json();
@@ -2805,14 +3462,14 @@ function updateLanguage() {
                 <table class="material-input-table" style="width: 100%; border-collapse: collapse; font-size: 1.1em;">
                     <thead>
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">분말명</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">LOT 번호</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">목표중량<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최소<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">허용최대<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">계량중량<br>(kg)</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">판정</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">상태</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">분말명</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">LOT 번호</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">목표중량</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">허용최소</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">허용최대</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">계량중량</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">판정</th>
+                            <th style="padding: 15px; text-align: center; border: 2px solid #999;">상태</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -2852,22 +3509,36 @@ function updateLanguage() {
                     }
                 }
 
-                const minWeight = (targetWeight * (1 - tolerancePercent / 100)).toFixed(2);
-                const maxWeight = (targetWeight * (1 + tolerancePercent / 100)).toFixed(2);
+                const minWeightKg = targetWeight * (1 - tolerancePercent / 100);
+                const maxWeightKg = targetWeight * (1 + tolerancePercent / 100);
+
+                // 단위 변환: Main은 ton, 기타는 g
+                let displayTarget, displayMin, displayMax, unitLabel;
+                if (recipe.is_main) {
+                    displayTarget = Math.round(targetWeight / 1000); // ton, 소수점 없음
+                    displayMin = Math.round(minWeightKg / 1000);
+                    displayMax = Math.round(maxWeightKg / 1000);
+                    unitLabel = 'ton';
+                } else {
+                    displayTarget = Math.round(targetWeight * 1000); // g, 소수점 없음
+                    displayMin = Math.round(minWeightKg * 1000);
+                    displayMax = Math.round(maxWeightKg * 1000);
+                    unitLabel = 'g';
+                }
 
                 const rowBg = isCompleted ? '#f0f8f0' : '#ffffff';
 
                 html += `<tr style="background: ${rowBg}; border-bottom: 2px solid #eee;">`;
 
                 // 분말명
-                html += `<td style="padding: 15px; border: 1px solid #ddd; font-weight: 600; font-size: 1.1em;">${recipe.powder_name}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; font-weight: 600; font-size: 1.1em;">${recipe.powder_name}</td>`;
 
                 // LOT 번호 (최대 2개: 기본 1개, 필요시 추가)
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">${existingInput.material_lot}</td>`;
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">${existingInput.material_lot}</td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
+                        <td style="padding: 15px; border: 2px solid #999;">
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <select id="lot-${recipe.id}-1" onchange="validateLotSelection('${recipe.id}', '${recipe.powder_name}', 1)"
                                     data-powder="${recipe.powder_name}" data-category="${recipe.powder_category}"
@@ -2890,24 +3561,30 @@ function updateLanguage() {
                 }
 
                 // 목표중량
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(targetWeight.toFixed(2))}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em;">${formatNumber(displayTarget)} ${unitLabel}</td>`;
 
                 // 허용최소
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(minWeight)}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMin)} ${unitLabel}</td>`;
 
                 // 허용최대
-                html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.1em; color: #ff9800;">${formatNumber(maxWeight)}</td>`;
+                html += `<td style="padding: 15px; border: 2px solid #999; text-align: right; font-size: 1.1em; color: #d97706; font-weight: 600; background-color: #dbeafe;">${formatNumber(displayMax)} ${unitLabel}</td>`;
 
                 // 계량중량 (Main 분말: 1~5ton 선택, 다른 분말: 최대 2개 입력)
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(existingInput.actual_weight)}</td>`;
+                    let displayActual;
+                    if (recipe.is_main) {
+                        displayActual = Math.round(existingInput.actual_weight / 1000); // ton
+                    } else {
+                        displayActual = Math.round(existingInput.actual_weight * 1000); // g
+                    }
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center; font-size: 1.2em; font-weight: 600;">${formatNumber(displayActual)} ${unitLabel}</td>`;
                 } else if (recipe.is_main) {
                     // Main 분말: 1~5ton 선택 (배합 작업 시 설정한 중량으로 초기화)
                     const mainWeight = currentBlendingWork.main_powder_weights && currentBlendingWork.main_powder_weights[recipe.powder_name]
                         ? currentBlendingWork.main_powder_weights[recipe.powder_name]
                         : '';
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
+                        <td style="padding: 15px; border: 2px solid #999;">
                             <div style="display:flex; flex-direction:column; gap:8px;">
                                 <select id="weight-${recipe.id}-1"
                                     onchange="checkWeightJudgement('${recipe.id}')"
@@ -2935,16 +3612,16 @@ function updateLanguage() {
                         </td>
                     `;
                 } else {
-                    // 다른 분말: 기존 방식 (최대 2개 입력)
+                    // 다른 분말: g 단위로 입력 (소수점 없음)
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd;">
-                            <input type="number" step="0.1" id="weight-${recipe.id}-1"
+                        <td style="padding: 15px; border: 2px solid #999;">
+                            <input type="number" step="1" id="weight-${recipe.id}-1"
                                 onchange="checkWeightJudgement('${recipe.id}')"
-                                placeholder="중량1 (kg)"
+                                placeholder="중량1 (g)"
                                 style="width:100%; padding: 8px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 5px; text-align: center; margin-bottom:4px;">
-                            <input type="number" step="0.1" id="weight-${recipe.id}-2"
+                            <input type="number" step="1" id="weight-${recipe.id}-2"
                                 style="width:100%; padding: 8px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 5px; text-align: center; display:none;"
-                                placeholder="중량2 (kg)"
+                                placeholder="중량2 (g)"
                                 onchange="checkWeightJudgement('${recipe.id}')">
                         </td>
                     `;
@@ -2956,14 +3633,14 @@ function updateLanguage() {
                     const judgementBadge = isValid
                         ? '<span style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✓ 적정</span>'
                         : '<span style="background: #f44336; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✗ 부적정</span>';
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">${judgementBadge}</td>`;
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">${judgementBadge}</td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                        <td style="padding: 15px; border: 2px solid #999; text-align: center;">
                             <button onclick="judgeWeight('${recipe.id}', ${targetWeight}, ${tolerancePercent})"
                                 id="judge-${recipe.id}"
                                 disabled
-                                style="background: #2196F3; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
+                                style="background: #FF9800; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
                                 판정
                             </button>
                             <div id="judgement-${recipe.id}" style="margin-top: 5px; font-weight: 600;"></div>
@@ -2973,16 +3650,16 @@ function updateLanguage() {
 
                 // 상태
                 if (isCompleted) {
-                    html += `<td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                    html += `<td style="padding: 15px; border: 2px solid #999; text-align: center;">
                         <span style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 5px; font-weight: 600;">✓ 투입완료</span>
                     </td>`;
                 } else {
                     html += `
-                        <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                        <td style="padding: 15px; border: 2px solid #999; text-align: center;">
                             <button onclick="saveMaterialInput('${recipe.id}', '${recipe.powder_name}', ${targetWeight}, ${tolerancePercent}, '${recipe.powder_category}')"
                                 id="save-${recipe.id}"
                                 disabled
-                                style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
+                                style="background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600;">
                                 저장
                             </button>
                             <div id="status-${recipe.id}" style="margin-top: 5px; font-size: 0.9em;"></div>
@@ -2996,7 +3673,7 @@ function updateLanguage() {
                 if (!isCompleted) {
                     html += `
                         <tr id="validation-row-${recipe.id}" style="display: none; background: #fff3cd;">
-                            <td colspan="8" style="padding: 10px; border: 1px solid #ddd;">
+                            <td colspan="8" style="padding: 10px; border: 2px solid #999;">
                                 <div id="validation-${recipe.id}" style="font-weight: 600;"></div>
                             </td>
                         </tr>
@@ -3019,13 +3696,44 @@ function updateLanguage() {
                 }
             });
 
-            // 완료 버튼 활성화 확인 - 모든 원재료가 투입되고 모두 적정 판정인 경우만
-            const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
-            const allValid = currentMaterialInputs.every(input => input.is_valid);
-            document.getElementById('completeBlendingBtn').disabled = !(allCompleted && allValid);
+            // 버튼 렌더링 - 작업 상태 및 진입 경로에 따라 다른 버튼 표시
+            const buttonsContainer = document.getElementById('materialInputButtons');
+            const workStatus = currentBlendingWork.status;
 
-            if (allCompleted && !allValid) {
-                alert('⚠️ 부적정 판정된 원재료가 있습니다. 모든 원재료가 적정 판정되어야 작업을 완료할 수 있습니다.');
+            // 돌아가기 버튼 텍스트 및 페이지 결정
+            const backButtonText = materialInputSourcePage === 'blending'
+                ? '← 배합작업 메뉴로 돌아가기'
+                : '← 조회화면으로 돌아가기';
+            const backPage = materialInputSourcePage === 'blending' ? 'blending' : 'blending-log';
+
+            if (workStatus === 'completed') {
+                // 완료된 작업 - 바코드 인쇄 및 돌아가기 버튼
+                buttonsContainer.innerHTML = `
+                    <button class="btn" onclick="showBarcodePanel()" style="background:#2196F3; color:white; padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
+                        🏷️ 바코드 라벨 인쇄
+                    </button>
+                    <button class="btn secondary" onclick="hideLabelPanel(); showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ${backButtonText}
+                    </button>
+                `;
+            } else {
+                // 진행중인 작업 - 배합 작업 완료 및 돌아가기 버튼
+                const allCompleted = currentMaterialInputs.length === currentBlendingRecipes.length;
+                const allValid = currentMaterialInputs.every(input => input.is_valid);
+                const canComplete = allCompleted && allValid;
+
+                buttonsContainer.innerHTML = `
+                    <button class="btn" onclick="completeBlendingWork()" id="completeBlendingBtn" ${!canComplete ? 'disabled' : ''} style="padding:10px 20px; border:none; border-radius:4px; cursor:pointer;">
+                        배합 작업 완료
+                    </button>
+                    <button class="btn secondary" onclick="hideLabelPanel(); showPage('${backPage}')" style="padding:10px 20px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">
+                        ${backButtonText}
+                    </button>
+                `;
+
+                if (allCompleted && !allValid) {
+                    alert('⚠️ 부적정 판정된 원재료가 있습니다. 모든 원재료가 적정 판정되어야 작업을 완료할 수 있습니다.');
+                }
             }
         }
 
@@ -3035,14 +3743,14 @@ function updateLanguage() {
                         const lotSelect2 = document.getElementById(`lot-${recipeId}-2`);
                         if (!lotSelect1) return;
 
-                        const response = await fetch(`${API_BASE}/api/completed-lots/${encodeURIComponent(powderName)}?category=${category}`);
+                        const response = await fetch(`${API_BASE}/api/completed-lots?powder_name=${encodeURIComponent(powderName)}&category=${category}`);
                         const data = await response.json();
 
                         if (data.success && data.lots && data.lots.length > 0) {
                             const optionsHtml = ['<option value="">LOT 선택</option>'];
                             data.lots.forEach(lot => {
-                                const inspectionDate = new Date(lot.inspection_time).toLocaleDateString('ko-KR');
-                                optionsHtml.push(`<option value="${lot.lot_number}">${lot.lot_number} (검사일: ${inspectionDate})</option>`);
+                                const inspectionDate = new Date(lot.inspection_time).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
+                                optionsHtml.push(`<option value="${lot.lot_number}">${lot.lot_number} (${inspectionDate})</option>`);
                             });
 
                             lotSelect1.innerHTML = optionsHtml.join('');
@@ -3100,6 +3808,10 @@ function updateLanguage() {
 
         // 판정 버튼 클릭 시 적정/부적정 판단
         function judgeWeight(recipeId, targetWeight, tolerancePercent) {
+                    // Find recipe to check if it's main
+                    const recipe = currentBlendingRecipes.find(r => r.id == recipeId);
+                    const isMain = recipe ? recipe.is_main : false;
+
                     const weight1 = parseFloat(document.getElementById(`weight-${recipeId}-1`)?.value || 0);
                     const weight2 = parseFloat(document.getElementById(`weight-${recipeId}-2`)?.value || 0);
                     const judgementDiv = document.getElementById(`judgement-${recipeId}`);
@@ -3107,18 +3819,27 @@ function updateLanguage() {
                     const lot1 = document.getElementById(`lot-${recipeId}-1`);
                     const lot2 = document.getElementById(`lot-${recipeId}-2`);
 
-                    const actualWeight = (isNaN(weight1) ? 0 : weight1) + (isNaN(weight2) ? 0 : weight2);
-                    if (!actualWeight || actualWeight <= 0) {
+                    // 입력된 중량 (Main: ton → kg 변환, 기타: g → kg 변환)
+                    let actualWeightKg;
+                    if (isMain) {
+                        // ton → kg (1 ton = 1000 kg)
+                        actualWeightKg = (weight1 * 1000) + (weight2 * 1000);
+                    } else {
+                        // g → kg (1000 g = 1 kg)
+                        actualWeightKg = (weight1 / 1000) + (weight2 / 1000);
+                    }
+
+                    if (!actualWeightKg || actualWeightKg <= 0) {
                         alert('계량중량을 입력해주세요.');
                         return;
                     }
 
-                    // 허용 범위 계산 (합산 기준)
+                    // 허용 범위 계산 (kg 기준)
                     const minWeight = targetWeight * (1 - tolerancePercent / 100);
                     const maxWeight = targetWeight * (1 + tolerancePercent / 100);
 
                     // 판정
-                    const isValid = actualWeight >= minWeight && actualWeight <= maxWeight;
+                    const isValid = actualWeightKg >= minWeight && actualWeightKg <= maxWeight;
 
                     if (isValid) {
                         judgementDiv.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">✓ 적정</span>';
@@ -3129,12 +3850,26 @@ function updateLanguage() {
                             if (saveBtn) saveBtn.disabled = false;
                         }
                     } else {
-                        const deviation = ((actualWeight - targetWeight) / targetWeight * 100).toFixed(2);
+                        const deviation = ((actualWeightKg - targetWeight) / targetWeight * 100).toFixed(2);
                         judgementDiv.innerHTML = `<span style="color: #f44336; font-size: 1.1em;">✗ 부적정<br>(${deviation > 0 ? '+' : ''}${deviation}%)</span>`;
                         judgementDiv.setAttribute('data-judgement', 'fail');
                         if (saveBtn) saveBtn.disabled = true;
 
-                        alert(`⚠️ 허용범위를 벗어났습니다.\n허용범위: ${formatNumber(minWeight.toFixed(2))} ~ ${formatNumber(maxWeight.toFixed(2))} kg\n입력값(합계): ${formatNumber(actualWeight)} kg`);
+                        // 허용범위 표시 단위 변환
+                        let minDisplay, maxDisplay, actualDisplay, unit;
+                        if (isMain) {
+                            minDisplay = Math.round(minWeight / 1000);
+                            maxDisplay = Math.round(maxWeight / 1000);
+                            actualDisplay = Math.round(actualWeightKg / 1000);
+                            unit = 'ton';
+                        } else {
+                            minDisplay = Math.round(minWeight * 1000);
+                            maxDisplay = Math.round(maxWeight * 1000);
+                            actualDisplay = Math.round(actualWeightKg * 1000);
+                            unit = 'g';
+                        }
+
+                        alert(`⚠️ 허용범위를 벗어났습니다.\n허용범위: ${formatNumber(minDisplay)} ~ ${formatNumber(maxDisplay)} ${unit}\n입력값(합계): ${formatNumber(actualDisplay)} ${unit}`);
                     }
         }
 
@@ -3161,7 +3896,7 @@ function updateLanguage() {
             // validate each selected lot independently (if provided)
             try {
                 if (lotNumber) {
-                    const response = await fetch(`${API_BASE}/api/blending/validate-lot/${encodeURIComponent(lotNumber)}`);
+                    const response = await fetch(`${API_BASE}/api/blending/validate-lot/${encodeURIComponent(lotNumber)}?powder_name=${encodeURIComponent(expectedPowder)}`);
                     const data = await response.json();
 
                     if (data.success && data.valid) {
@@ -3195,14 +3930,28 @@ function updateLanguage() {
         }
 
         async function saveMaterialInput(recipeId, powderName, targetWeight, tolerancePercent, powderCategory) {
+            // Find recipe to check if it's main
+            const recipe = currentBlendingRecipes.find(r => r.id == recipeId);
+            const isMain = recipe ? recipe.is_main : false;
+
             const lot1 = document.getElementById(`lot-${recipeId}-1`)?.value.trim() || '';
             const lot2 = document.getElementById(`lot-${recipeId}-2`)?.value.trim() || '';
             const w1 = parseFloat(document.getElementById(`weight-${recipeId}-1`)?.value || 0);
             const w2 = parseFloat(document.getElementById(`weight-${recipeId}-2`)?.value || 0);
-            const actualWeightNum = (isNaN(w1) ? 0 : w1) + (isNaN(w2) ? 0 : w2);
+
+            // 입력된 중량을 kg로 변환
+            let actualWeightKg;
+            if (isMain) {
+                // ton → kg
+                actualWeightKg = (w1 * 1000) + (w2 * 1000);
+            } else {
+                // g → kg
+                actualWeightKg = (w1 / 1000) + (w2 / 1000);
+            }
+
             const judgementDiv = document.getElementById(`judgement-${recipeId}`);
 
-            if ((!lot1 && !lot2) || !actualWeightNum) {
+            if ((!lot1 && !lot2) || !actualWeightKg) {
                 alert('LOT 번호과 실제 중량(최소 1개)은 모두 입력하세요.');
                 return;
             }
@@ -3216,12 +3965,25 @@ function updateLanguage() {
                 }
             }
 
-            // 허용 범위 재확인
+            // 허용 범위 재확인 (kg 기준)
             const minWeight = targetWeight * (1 - tolerancePercent / 100);
             const maxWeight = targetWeight * (1 + tolerancePercent / 100);
 
-            if (actualWeightNum < minWeight || actualWeightNum > maxWeight) {
-                alert(`⚠️ 부적정(NG) 판정된 원재료는 저장할 수 없습니다.\n\n허용범위: ${formatNumber(minWeight.toFixed(2))} ~ ${formatNumber(maxWeight.toFixed(2))} kg\n입력값(합계): ${formatNumber(actualWeightNum)} kg\n\n적정 범위 내로 다시 계량해주세요.`);
+            if (actualWeightKg < minWeight || actualWeightKg > maxWeight) {
+                // 허용범위 표시 단위 변환
+                let minDisplay, maxDisplay, actualDisplay, unit;
+                if (isMain) {
+                    minDisplay = Math.round(minWeight / 1000);
+                    maxDisplay = Math.round(maxWeight / 1000);
+                    actualDisplay = Math.round(actualWeightKg / 1000);
+                    unit = 'ton';
+                } else {
+                    minDisplay = Math.round(minWeight * 1000);
+                    maxDisplay = Math.round(maxWeight * 1000);
+                    actualDisplay = Math.round(actualWeightKg * 1000);
+                    unit = 'g';
+                }
+                alert(`⚠️ 부적정(NG) 판정된 원재료는 저장할 수 없습니다.\n\n허용범위: ${formatNumber(minDisplay)} ~ ${formatNumber(maxDisplay)} ${unit}\n입력값(합계): ${formatNumber(actualDisplay)} ${unit}\n\n적정 범위 내로 다시 계량해주세요.`);
                 return;
             }
 
@@ -3238,7 +4000,7 @@ function updateLanguage() {
                         powder_category: powderCategory,
                         material_lot: materialLot,
                         target_weight: targetWeight,
-                        actual_weight: actualWeightNum,
+                        actual_weight: actualWeightKg,
                         tolerance_percent: tolerancePercent,
                         operator: currentBlendingWork.operator
                     })
@@ -3249,7 +4011,7 @@ function updateLanguage() {
                 if (data.success) {
                     if (data.is_valid) {
                         alert('✓ 원재료 투입이 기록되었습니다.');
-                        loadMaterialInputPage(currentBlendingWork.id);
+                        loadMaterialInputPage(currentBlendingWork.id, materialInputSourcePage);
                     } else {
                         alert(`⚠️ 부적정(NG) 판정되어 저장할 수 없습니다.\n${data.validation_message}`);
                     }
@@ -3358,7 +4120,7 @@ function updateLanguage() {
                 // 날짜 (작업 완료시엔 서버의 end_time을 사용하거나 현재 시각 사용)
                 const dateStr = (work.end_time) ? new Date(work.end_time).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR');
 
-                const company = translations[currentLang].companyName || 'Johnson Electric Operations';
+                const company = 'Johnson Electric Operations';
                 const product = work.product_name || '';
                 const batchLot = work.batch_lot || '';
 
@@ -3367,7 +4129,7 @@ function updateLanguage() {
                         <!-- 상단: 회사명 (왼쪽 상단) 및 날짜(오른쪽 상단) -->
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
                             <div style="font-weight:700; font-size:12px; text-align:left;">${company}</div>
-                            <div style="font-size:11px; color:#222; text-align:right;">${translations[currentLang].labelDate || '작업날짜'}: ${dateStr}</div>
+                            <div style="font-size:11px; color:#222; text-align:right;">작업날짜: ${dateStr}</div>
                         </div>
 
                         <!-- 중앙: 분말명 (크게) -->
@@ -3379,9 +4141,9 @@ function updateLanguage() {
                         <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
                             <svg id="label-barcode-${i}" style="width:100%; height:72px; display:block;"></svg>
                             <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
-                            <div style="font-size:12px; color:#222; font-weight:600;">${translations[currentLang].labelPack || 'Pack'}: ${i}/${totalPacks} • ${translations[currentLang].labelWeight || '중량'}: ${formatNumber(packWeight)} kg</div>
+                            <div style="font-size:12px; color:#222; font-weight:600;">Pack: ${i}/${totalPacks} • 중량: ${formatNumber(packWeight)} kg</div>
                             <div style="display:flex; gap:6px; justify-content:center; width:100%;">
-                                <button class="btn" onclick="printLabel(${i})">${translations[currentLang].printLabel || '인쇄'}</button>
+                                <button class="btn" onclick="printLabel(${i})">인쇄</button>
                             </div>
                         </div>
                     </div>
@@ -3390,25 +4152,58 @@ function updateLanguage() {
                 labelDiv.innerHTML = infoHtml;
                 list.appendChild(labelDiv);
 
-                // 바코드 내용: 간단한 파이프 구분 문자열
-                const barcodeValue = `PN:${product}|LOT:${batchLot}|DATE:${dateStr}|COMP:${company}|PACK:${i}/${totalPacks}|WT:${packWeight}kg`;
+                // 바코드 내용: 영문/숫자만 사용 (CODE128은 한글 미지원)
+                // 분말명(영문), LOT 번호, Pack 정보를 모두 포함
+                const barcodeValue = `PN:${product}|LOT:${batchLot}|${i}/${totalPacks}`;
 
-                // render barcode into svg
-                try {
-                    const svgEl = labelDiv.querySelector(`#label-barcode-${i}`);
-                    if (svgEl && typeof JsBarcode === 'function') {
-                        JsBarcode(svgEl, barcodeValue, { format: 'CODE128', width: 2, height: 72, displayValue: true, fontSize: 12, margin: 0 });
-                    } else if (svgEl) {
-                        svgEl.innerHTML = `<text x="0" y="20">${barcodeValue}</text>`;
+                // render barcode into svg (DOM 렌더링 후 실행)
+                setTimeout(() => {
+                    try {
+                        const svgEl = document.getElementById(`label-barcode-${i}`);
+                        if (svgEl && typeof JsBarcode === 'function') {
+                            JsBarcode(svgEl, barcodeValue, {
+                                format: 'CODE128',
+                                width: 2,
+                                height: 60,
+                                displayValue: true,
+                                fontSize: 14,
+                                margin: 2,
+                                marginTop: 5,
+                                marginBottom: 5
+                            });
+                            console.log('바코드 생성 성공:', barcodeValue);
+                        } else {
+                            console.error('JsBarcode를 찾을 수 없거나 SVG 요소가 없습니다.', svgEl);
+                            if (svgEl) {
+                                svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="10">${barcodeValue}</text>`;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('바코드 렌더링 오류:', err);
                     }
-                } catch (err) {
-                    console.error('바코드 렌더링 오류:', err);
-                }
+                }, 100);
             }
 
             // show panel
             panel.style.display = 'block';
             panel.setAttribute('aria-hidden', 'false');
+        }
+
+        function showBarcodePanel() {
+            const panel = document.getElementById('labelPanel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.setAttribute('aria-hidden', 'false');
+
+                // 라벨이 비어있으면 생성
+                const labelList = document.getElementById('labelList');
+                if (labelList && labelList.children.length === 0) {
+                    // 완료된 작업의 라벨 재생성
+                    if (currentBlendingWork && currentBlendingWork.status === 'completed') {
+                        renderLabelPanel(currentBlendingWork);
+                    }
+                }
+            }
         }
 
         function hideLabelPanel() {
@@ -3425,6 +4220,10 @@ function updateLanguage() {
             const labelEl = list && list.children && list.children[index - 1];
             if (!labelEl) return alert('라벨을 찾을 수 없습니다.');
 
+            // 바코드 SVG 요소와 데이터 가져오기
+            const barcodeSvg = labelEl.querySelector('svg[id^="label-barcode-"]');
+            const barcodeId = barcodeSvg ? barcodeSvg.id : null;
+
             const content = labelEl.innerHTML;
             const w = window.open('', '_blank');
             if (!w) return alert('팝업 차단을 확인하세요.');
@@ -3434,6 +4233,7 @@ function updateLanguage() {
                 <head>
                     <meta charset="utf-8">
                     <title>라벨 인쇄</title>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <style>
                         body { margin:0; padding:0; }
                         .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
@@ -3442,7 +4242,26 @@ function updateLanguage() {
                 <body>
                     <div class="label">${content}</div>
                     <script>
-                        window.onload = function() { setTimeout(function(){ window.print(); window.close(); }, 300); };
+                        window.onload = function() {
+                            // 바코드 재렌더링
+                            const svgEl = document.querySelector('svg[id^="label-barcode-"]');
+                            if (svgEl && typeof JsBarcode === 'function') {
+                                // SVG에서 원래 바코드 값 추출 (text 요소에서)
+                                const textEl = svgEl.querySelector('text');
+                                if (textEl && textEl.textContent) {
+                                    const barcodeValue = textEl.textContent;
+                                    JsBarcode(svgEl, barcodeValue, {
+                                        format: 'CODE128',
+                                        width: 2,
+                                        height: 72,
+                                        displayValue: true,
+                                        fontSize: 12,
+                                        margin: 0
+                                    });
+                                }
+                            }
+                            setTimeout(function(){ window.print(); window.close(); }, 500);
+                        };
                     <\/script>
                 </body>
                 </html>
@@ -3468,22 +4287,49 @@ function updateLanguage() {
         // 배합작업 조회 (Blending Work Log)
         // ============================================
 
+        async function loadMixingPowderListForFilter() {
+            // 배합작업 현황 조회 필터용 배합분말 목록 로드
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/powder-spec?category=mixing`);
+                const data = await response.json();
+
+                const select = document.getElementById('filterProductName');
+                if (!select) return;
+
+                // 기존 옵션 유지하고 분말 목록 추가
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">전체</option>';
+
+                if (data.success && data.specs) {
+                    data.specs.forEach(spec => {
+                        const option = document.createElement('option');
+                        option.value = spec.powder_name;
+                        option.textContent = spec.powder_name;
+                        select.appendChild(option);
+                    });
+                }
+
+                // 이전 선택값 복원
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            } catch (error) {
+                console.error('배합분말 목록 로딩 실패:', error);
+            }
+        }
+
         async function loadBlendingWorks() {
             try {
-                // 배합작업조회 날짜 기본값 설정 (오늘 날짜)
-                const today = new Date().toISOString().split('T')[0];
-                const filterCompletedDateInput = document.getElementById('filterCompletedDate');
-                if (filterCompletedDateInput && !filterCompletedDateInput.value) {
-                    filterCompletedDateInput.value = today;
-                }
-                
-                const statusFilter = document.getElementById('blendingLogStatusFilter').value;
-                const completedDate = document.getElementById('filterCompletedDate') ? document.getElementById('filterCompletedDate').value : '';
+                const statusFilterEl = document.getElementById('blendingLogStatusFilter');
+                const statusFilter = statusFilterEl ? statusFilterEl.value : 'completed';
+                const completedDateFrom = document.getElementById('filterCompletedDateFrom') ? document.getElementById('filterCompletedDateFrom').value : '';
+                const completedDateTo = document.getElementById('filterCompletedDateTo') ? document.getElementById('filterCompletedDateTo').value : '';
                 const productName = document.getElementById('filterProductName') ? document.getElementById('filterProductName').value.trim() : '';
                 const batchLot = document.getElementById('filterBatchLot') ? document.getElementById('filterBatchLot').value.trim() : '';
 
                 let url = `${API_BASE}/api/blending/works?status=${encodeURIComponent(statusFilter)}`;
-                if (completedDate) url += `&completed_date=${encodeURIComponent(completedDate)}`;
+                if (completedDateFrom) url += `&completed_date_from=${encodeURIComponent(completedDateFrom)}`;
+                if (completedDateTo) url += `&completed_date_to=${encodeURIComponent(completedDateTo)}`;
                 if (productName) url += `&product_name=${encodeURIComponent(productName)}`;
                 if (batchLot) url += `&batch_lot=${encodeURIComponent(batchLot)}`;
 
@@ -3491,6 +4337,7 @@ function updateLanguage() {
                 const data = await response.json();
 
                 const tbody = document.getElementById('blendingWorksTableBody');
+                if (!tbody) return;
 
                 if (!data.success || !data.works || data.works.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="empty-message">배합작업 내역이 없습니다.</td></tr>';
@@ -3514,9 +4361,14 @@ function updateLanguage() {
                             <td>${endTime}</td>
                             <td>
                                 ${work.status === 'completed' ?
-                                    `<button class="btn" onclick="loadMaterialInputPage(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
-                                        입력현황
-                                    </button>` :
+                                    `<div style="display: flex; gap: 5px;">
+                                        <button class="btn" onclick="loadMaterialInputPage(${work.id}, 'blending-log')" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
+                                            입력현황
+                                        </button>
+                                        <button class="btn danger" onclick="deleteBlendingWork(${work.id}, '${work.batch_lot}')" style="padding: 6px 12px; font-size: 0.9em; background:#f44336; color:white; border:none; border-radius:4px;">
+                                            삭제
+                                        </button>
+                                    </div>` :
                                     `<div style="display: flex; gap: 5px;">
                                         <button class="btn" onclick="continueBlendingWork(${work.id})" style="padding: 6px 12px; font-size: 0.9em; background:#2196F3; color:white; border:none; border-radius:4px;">
                                             작업 계속
@@ -3546,11 +4398,13 @@ function updateLanguage() {
         }
 
         function resetBlendingFilters() {
-            const dateEl = document.getElementById('filterCompletedDate');
+            const dateFromEl = document.getElementById('filterCompletedDateFrom');
+            const dateToEl = document.getElementById('filterCompletedDateTo');
             const prodEl = document.getElementById('filterProductName');
             const lotEl = document.getElementById('filterBatchLot');
             const statusEl = document.getElementById('blendingLogStatusFilter');
-            if (dateEl) dateEl.value = '';
+            if (dateFromEl) dateFromEl.value = '';
+            if (dateToEl) dateToEl.value = '';
             if (prodEl) prodEl.value = '';
             if (lotEl) lotEl.value = '';
             if (statusEl) statusEl.value = 'in_progress';
@@ -3558,14 +4412,18 @@ function updateLanguage() {
         }
 
         async function deleteBlendingWork(workId, batchLot) {
-            // 진행중인 배합 작업 삭제
-            if (!confirm(`배합 LOT "${batchLot}"를 삭제하시겠습니까?\n\n이 작업과 관련된 모든 원재료 투입 데이터도 함께 삭제됩니다.`)) {
-                return;
+            // 관리자 비밀번호 확인
+            const password = prompt(`배합 LOT "${batchLot}"를 삭제하시겠습니까?\n\n관리자 비밀번호를 입력하세요:`);
+
+            if (!password) {
+                return; // 취소
             }
 
             try {
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminPassword: password })
                 });
 
                 const data = await response.json();
@@ -3587,7 +4445,7 @@ function updateLanguage() {
                 alert('유효한 작업 ID가 필요합니다.');
                 return;
             }
-            loadMaterialInputPage(workId);
+            loadMaterialInputPage(workId, 'blending');
         }
 
         // ============================================
@@ -3906,6 +4764,15 @@ function updateLanguage() {
             }
         }
 
+        // 작업지시서용 Recipe 로드 (제품 선택 시)
+        async function loadOrderRecipe() {
+            const productName = document.getElementById('orderProductName')?.value;
+            if (!productName) return;
+
+            // 필요시 Recipe 정보를 표시할 수 있음
+            // 현재는 제품 선택만 처리
+        }
+
         // 작업지시서 생성 폼 제출
         const orderFormElement = document.getElementById('blendingOrderForm');
         if (orderFormElement) {
@@ -3915,7 +4782,6 @@ function updateLanguage() {
                 const productName = document.getElementById('orderProductName').value;
                 const totalWeight = document.getElementById('orderTotalWeight').value;
                 const createdBy = document.getElementById('orderCreatedBy').value;
-                const notes = document.getElementById('orderNotes').value;
                 const workDate = document.getElementById('orderDate') ? document.getElementById('orderDate').value : null;
 
                 if (!productName || !totalWeight) {
@@ -3931,7 +4797,6 @@ function updateLanguage() {
                             product_name: productName,
                             total_target_weight: parseFloat(totalWeight),
                             created_by: createdBy || '미지정',
-                            notes: notes,
                             work_date: workDate || null
                         })
                     });
@@ -3956,7 +4821,14 @@ function updateLanguage() {
         async function loadBlendingOrders() {
             try {
                 const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
-                const response = await fetch(`${API_BASE}/api/blending-orders?status=${statusFilter}`);
+                const dateFrom = document.getElementById('orderDateFrom')?.value || '';
+                const dateTo = document.getElementById('orderDateTo')?.value || '';
+
+                let url = `${API_BASE}/api/blending-orders?status=${statusFilter}`;
+                if (dateFrom) url += `&date_from=${encodeURIComponent(dateFrom)}`;
+                if (dateTo) url += `&date_to=${encodeURIComponent(dateTo)}`;
+
+                const response = await fetch(url);
                 const data = await response.json();
 
                 const container = document.getElementById('blendingOrdersList');
@@ -3996,10 +4868,10 @@ function updateLanguage() {
                             <td style="padding: 15px; text-align: center;">
                                 ${order.created_date}
                             </td>
-                            <td style="padding: 15px; text-align: center; font-weight: 600; font-size: 1.1em;">
+                            <td style="padding: 15px; text-align: center;">
                                 ${order.work_order_number}
                             </td>
-                            <td style="padding: 15px; text-align: center;">
+                            <td style="padding: 15px; text-align: center; font-weight: 600; font-size: 1.1em;">
                                 ${order.product_name}
                             </td>
                             <td style="padding: 15px; text-align: center; font-size: 1.1em; font-weight: 600;">
@@ -4028,6 +4900,18 @@ function updateLanguage() {
                     container.innerHTML = '<div class="empty-message">작업지시서 목록을 불러올 수 없습니다.</div>';
                 }
             }
+        }
+
+        function resetOrderFilters() {
+            const statusEl = document.getElementById('orderStatusFilter');
+            const dateFromEl = document.getElementById('orderDateFrom');
+            const dateToEl = document.getElementById('orderDateTo');
+
+            if (statusEl) statusEl.value = 'in_progress';
+            if (dateFromEl) dateFromEl.value = '';
+            if (dateToEl) dateToEl.value = '';
+
+            loadBlendingOrders();
         }
 
         // 배합 페이지에서 작업 시작을 위해 간단히 작업지시서 목록을 렌더링
@@ -4156,21 +5040,10 @@ function updateLanguage() {
                     workOrderInput.style.background = '#f0f0f0';
                 }
 
-                // 목표중량 설정 (select에 없으면 임시 option 추가)
+                // 목표중량은 항상 기본값(선택하세요)으로 설정
                 const targetSelect = document.getElementById('blendingTargetWeight');
                 if (targetSelect) {
-                    const val = order.total_target_weight;
-                    let optExists = false;
-                    for (let opt of targetSelect.options) {
-                        if (String(opt.value) === String(val)) { optExists = true; break; }
-                    }
-                    if (!optExists) {
-                        const opt = document.createElement('option');
-                        opt.value = val;
-                        opt.text = formatNumber(val) + ' kg';
-                        targetSelect.prepend(opt);
-                    }
-                    targetSelect.value = val;
+                    targetSelect.value = '';
                 }
 
                 // operator 비워두기 (사용자가 선택)
@@ -4186,11 +5059,6 @@ function updateLanguage() {
                 console.error(err);
                 alert('작업지시서 불러오기 중 오류가 발생했습니다.');
             }
-        }
-
-        // 번역 헬퍼 함수
-        function t(key) {
-            return translations[currentLang][key] || key;
         }
 
         // 숫자 포맷팅 함수 (천단위 콤마)
@@ -4238,8 +5106,825 @@ function updateLanguage() {
             return `<div style="display:flex;flex-direction:column;align-items:flex-start;">${boxesHtml}${remainingText}${note}</div>`;
         }
 
+        // ============================================
+        // 대시보드 함수
+        // ============================================
+
+        // 차트 객체 저장
+        let charts = {
+            workProgress: null,
+            qualityRate: null,
+            dailyTrend: null,
+            powderStatus: null
+        };
+
+        // 대시보드 로드 (현재 비활성화 - 빈 화면)
+        async function loadDashboard() {
+            // 대시보드가 빈 화면이므로 로딩 건너뜀
+            return;
+        }
+
+        // KPI 카드 로드
+        async function loadDashboardKPI() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/kpi`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('kpiTodayInspections').textContent = data.data.today_inspections;
+                    document.getElementById('kpiWorkProgress').textContent = data.data.work_progress;
+                    document.getElementById('kpiPassRate').textContent = data.data.pass_rate;
+                    document.getElementById('kpiFailCount').textContent = data.data.fail_count;
+                }
+            } catch (error) {
+                console.error('KPI 로드 실패:', error);
+            }
+        }
+
+        // 작업지시 진도율 차트
+        async function loadWorkProgressChart(filter = 'week') {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/work-progress?filter=${filter}`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    const categories = data.data.map(item => item.work_order);
+                    const progressData = data.data.map(item => item.progress);
+                    const targetData = data.data.map(item => item.target);
+                    const completedData = data.data.map(item => item.completed);
+
+                    const options = {
+                        series: [{
+                            name: '진도율',
+                            data: progressData
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: { show: false }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 8,
+                                dataLabels: {
+                                    position: 'top'
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (val) {
+                                return val.toFixed(1) + '%';
+                            },
+                            offsetX: -10,
+                            style: {
+                                fontSize: '12px',
+                                colors: ['#fff']
+                            }
+                        },
+                        colors: ['#9C27B0'],
+                        xaxis: {
+                            categories: categories,
+                            max: 100,
+                            labels: {
+                                formatter: function (val) {
+                                    return val + '%';
+                                }
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    fontSize: '11px'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            custom: function({series, seriesIndex, dataPointIndex, w}) {
+                                const target = targetData[dataPointIndex];
+                                const completed = completedData[dataPointIndex];
+                                const progress = progressData[dataPointIndex];
+                                return `<div style="padding: 10px;">
+                                    <strong>${categories[dataPointIndex]}</strong><br/>
+                                    목표: ${target.toLocaleString()} kg<br/>
+                                    완료: ${completed.toLocaleString()} kg<br/>
+                                    진도율: ${progress.toFixed(1)}%
+                                </div>`;
+                            }
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        }
+                    };
+
+                    if (charts.workProgress) {
+                        charts.workProgress.destroy();
+                    }
+                    charts.workProgress = new ApexCharts(document.querySelector("#chartWorkProgress"), options);
+                    charts.workProgress.render();
+                } else {
+                    document.getElementById('chartWorkProgress').innerHTML =
+                        '<div style="text-align:center;padding:50px;color:#999;">작업지시 데이터가 없습니다</div>';
+                }
+            } catch (error) {
+                console.error('작업진도율 차트 로드 실패:', error);
+            }
+        }
+
+        // 합격률 도넛 차트
+        async function loadQualityRateChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/quality-rate`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const passed = data.data.passed;
+                    const failed = data.data.failed;
+                    const inProgress = data.data.in_progress;
+
+                    // 범례 업데이트
+                    document.getElementById('legendPassCount').textContent = passed;
+                    document.getElementById('legendFailCount').textContent = failed;
+                    document.getElementById('legendInProgressCount').textContent = inProgress;
+
+                    const options = {
+                        series: [passed, failed, inProgress],
+                        labels: ['합격', '불합격', '진행중'],
+                        chart: {
+                            type: 'donut',
+                            height: 300
+                        },
+                        colors: ['#4CAF50', '#F44336', '#FFC107'],
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (val, opts) {
+                                return opts.w.config.series[opts.seriesIndex];
+                            }
+                        },
+                        legend: {
+                            show: false
+                        },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '65%',
+                                    labels: {
+                                        show: true,
+                                        total: {
+                                            show: true,
+                                            label: '총 검사',
+                                            fontSize: '16px',
+                                            fontWeight: 600,
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    if (charts.qualityRate) {
+                        charts.qualityRate.destroy();
+                    }
+                    charts.qualityRate = new ApexCharts(document.querySelector("#chartQualityRate"), options);
+                    charts.qualityRate.render();
+                }
+            } catch (error) {
+                console.error('합격률 차트 로드 실패:', error);
+            }
+        }
+
+        // 일별 검사 추이 차트
+        async function loadDailyTrendChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/daily-trend`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const dates = data.data.map(item => {
+                        const date = new Date(item.date);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    });
+                    const incomingData = data.data.map(item => item.incoming);
+                    const mixingData = data.data.map(item => item.mixing);
+
+                    const options = {
+                        series: [{
+                            name: '수입분말',
+                            data: incomingData
+                        }, {
+                            name: '배합분말',
+                            data: mixingData
+                        }],
+                        chart: {
+                            type: 'line',
+                            height: 300,
+                            toolbar: { show: false }
+                        },
+                        colors: ['#2196F3', '#9C27B0'],
+                        stroke: {
+                            width: 3,
+                            curve: 'smooth'
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        xaxis: {
+                            categories: dates
+                        },
+                        yaxis: {
+                            title: {
+                                text: '검사 건수'
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right'
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        },
+                        markers: {
+                            size: 4,
+                            strokeWidth: 0,
+                            hover: {
+                                size: 7
+                            }
+                        }
+                    };
+
+                    if (charts.dailyTrend) {
+                        charts.dailyTrend.destroy();
+                    }
+                    charts.dailyTrend = new ApexCharts(document.querySelector("#chartDailyTrend"), options);
+                    charts.dailyTrend.render();
+                }
+            } catch (error) {
+                console.error('일별 추이 차트 로드 실패:', error);
+            }
+        }
+
+        // 분말별 검사 현황 차트
+        async function loadPowderStatusChart() {
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/powder-status`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    const categories = data.data.map(item => item.powder);
+                    const passedData = data.data.map(item => item.passed);
+                    const failedData = data.data.map(item => item.failed);
+
+                    const options = {
+                        series: [{
+                            name: '합격',
+                            data: passedData
+                        }, {
+                            name: '불합격',
+                            data: failedData
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 300,
+                            stacked: true,
+                            toolbar: { show: false }
+                        },
+                        colors: ['#4CAF50', '#F44336'],
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 6
+                            }
+                        },
+                        dataLabels: {
+                            enabled: true
+                        },
+                        xaxis: {
+                            categories: categories
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    fontSize: '11px'
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right'
+                        },
+                        grid: {
+                            borderColor: '#f1f1f1'
+                        }
+                    };
+
+                    if (charts.powderStatus) {
+                        charts.powderStatus.destroy();
+                    }
+                    charts.powderStatus = new ApexCharts(document.querySelector("#chartPowderStatus"), options);
+                    charts.powderStatus.render();
+                } else {
+                    document.getElementById('chartPowderStatus').innerHTML =
+                        '<div style="text-align:center;padding:50px;color:#999;">검사 데이터가 없습니다</div>';
+                }
+            } catch (error) {
+                console.error('분말별 현황 차트 로드 실패:', error);
+            }
+        }
+
+        // 진도율 필터 변경 이벤트
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressFilter = document.getElementById('progressDateFilter');
+            if (progressFilter) {
+                progressFilter.addEventListener('change', function() {
+                    loadWorkProgressChart(this.value);
+                });
+            }
+        });
+
+        // ==========================================
+        // 자동입력 작업 화면 관련 함수
+        // ==========================================
+
+        // 자동입력 모드 시작
+        async function startAutoInputMode() {
+            // 배합작업 폼 검증
+            const productName = document.getElementById('blendingProductName').value;
+            const batchLot = document.getElementById('blendingBatchLot').value;
+            const targetWeight = document.getElementById('blendingTargetWeight').value;
+            const operator = document.getElementById('blendingOperator').value;
+
+            if (!productName || !batchLot || !targetWeight || !operator) {
+                alert('배합작업 정보를 먼저 입력해주세요.\n(제품명, 배합 LOT, 배합중량, 작업자)');
+                return;
+            }
+
+            // Recipe 확인
+            if (!currentRecipe || currentRecipe.length === 0) {
+                alert('제품의 Recipe 정보가 없습니다.');
+                return;
+            }
+
+            // 자동입력 페이지로 이동
+            showPage('auto-input');
+
+            // 작업 정보 표시
+            document.getElementById('autoInputProductName').textContent = productName;
+            document.getElementById('autoInputBatchLot').textContent = batchLot;
+            document.getElementById('autoInputTargetWeight').textContent = parseFloat(targetWeight).toLocaleString();
+
+            // 원재료 목록 렌더링
+            await renderAutoInputMaterialList();
+        }
+
+        // 자동입력 원재료 목록 렌더링
+        async function renderAutoInputMaterialList() {
+            const listContainer = document.getElementById('autoInputMaterialList');
+            const targetWeight = parseFloat(document.getElementById('blendingTargetWeight').value);
+
+            if (!currentRecipe || currentRecipe.length === 0) {
+                listContainer.innerHTML = '<div class="empty-message">Recipe 정보가 없습니다.</div>';
+                return;
+            }
+
+            // Main 분말 중량 정보 가져오기
+            const mainWeights = {};
+            currentRecipe.forEach(item => {
+                if (item.powder_category === 'main') {
+                    const weightInput = document.getElementById(`mainWeight_${item.powder_name}`);
+                    if (weightInput) {
+                        mainWeights[item.powder_name] = parseFloat(weightInput.value) || 0;
+                    }
+                }
+            });
+
+            // 각 분말의 필요 중량 계산
+            const materials = currentRecipe.map((item, index) => {
+                let calculatedWeight = 0;
+
+                if (item.powder_category === 'main') {
+                    // Main은 직접 입력한 중량 사용
+                    calculatedWeight = mainWeights[item.powder_name] || (targetWeight * item.ratio / 100);
+                } else {
+                    // Main 외 분말은 비율로 계산
+                    calculatedWeight = targetWeight * item.ratio / 100;
+                }
+
+                // 허용 오차 범위 계산
+                const tolerance = item.tolerance_percent || 5;
+                const minWeight = calculatedWeight * (1 - tolerance / 100);
+                const maxWeight = calculatedWeight * (1 + tolerance / 100);
+
+                return {
+                    index: index,
+                    powderName: item.powder_name,
+                    ratio: item.ratio,
+                    calculatedWeight: calculatedWeight.toFixed(2),
+                    minWeight: minWeight.toFixed(2),
+                    maxWeight: maxWeight.toFixed(2),
+                    tolerance: tolerance,
+                    category: item.powder_category,
+                    isMain: item.powder_category === 'main'
+                };
+            });
+
+            // 진행 상황 업데이트
+            document.getElementById('autoInputProgress').textContent = `0/${materials.length}`;
+
+            // HTML 생성
+            let html = '';
+            materials.forEach((material, idx) => {
+                const rowClass = idx === 0 ? 'material-input-row active' : 'material-input-row';
+                const statusBadge = idx === 0 ? '<span class="status-badge active">진행중</span>' : '<span class="status-badge waiting">대기</span>';
+
+                html += `
+                    <div class="${rowClass}" id="materialRow_${idx}" data-index="${idx}"
+                         data-min-weight="${material.minWeight}"
+                         data-max-weight="${material.maxWeight}"
+                         data-is-main="${material.isMain}"
+                         data-powder-name="${material.powderName}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 1.3em; font-weight: 700; color: #333;">${material.powderName}</span>
+                                    ${material.isMain ? '<span style="background: #2196F3; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600;">MAIN</span>' : ''}
+                                    ${statusBadge}
+                                </h4>
+                                <p style="margin: 0; color: #666; font-size: 0.9em;">
+                                    비율: ${material.ratio}% |
+                                    목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
+                                    허용오차: ±${material.tolerance}%
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" class="btn secondary" onclick="addLotRow(${idx})"
+                                        id="addLotBtn_${idx}" ${idx !== 0 ? 'disabled' : ''}
+                                        style="padding: 8px 16px; font-size: 0.9em;">
+                                    ➕ LOT 추가
+                                </button>
+                                <button type="button" class="btn" onclick="activateMaterialRow(${idx})"
+                                        id="activateBtn_${idx}" style="${idx === 0 ? 'display:none;' : ''}">
+                                    작업 시작
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LOT 입력 테이블 -->
+                        <div style="background: #fafafa; border-radius: 8px; padding: 15px;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #e0e0e0;">
+                                        <th style="padding: 10px; text-align: left; width: 40%;">📱 LOT 번호</th>
+                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (kg)</th>
+                                        <th style="padding: 10px; text-align: center; width: 20%;">작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lotTableBody_${idx}">
+                                    <!-- LOT 행들이 여기에 추가됨 -->
+                                </tbody>
+                            </table>
+
+                            <!-- 합계 및 판정 영역 -->
+                            <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #2196F3;">
+                                <div style="display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 15px; align-items: center;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">합계 중량</div>
+                                        <div style="font-size: 1.2em; font-weight: 700; color: #333;">
+                                            <span id="totalWeight_${idx}">0.00</span> kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 허용 중량 범위 -->
+                                    <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
+                                        <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
+                                        <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
+                                            ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 판정 버튼 -->
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <button type="button"
+                                                class="btn"
+                                                onclick="judgeMaterialWeight(${idx})"
+                                                id="judgeBtn_${idx}"
+                                                disabled
+                                                style="padding: 10px 16px; font-size: 0.95em; background: #FF9800; color: white; border: none; min-width: 80px; opacity: 0.5;">
+                                            🔍 판정
+                                        </button>
+                                        <div id="judgeResult_${idx}" style="font-weight: 700; font-size: 1em; min-width: 70px; text-align: center;">
+                                        </div>
+                                    </div>
+
+                                    <!-- 완료 버튼 -->
+                                    <div>
+                                        <button type="button" class="btn" onclick="completeMaterialInput(${idx})"
+                                                id="completeMaterialBtn_${idx}" disabled style="opacity: 0.5; width: 100%;">
+                                            ✓ 이 분말 투입 완료
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+
+            // 첫 번째 분말에 LOT 행 하나 추가
+            setTimeout(() => {
+                addLotRow(0);
+            }, 100);
+        }
+
+        // LOT 행 추가
+        let lotRowCounters = {}; // 각 분말별 LOT 행 카운터
+
+        function addLotRow(materialIndex) {
+            if (!lotRowCounters[materialIndex]) {
+                lotRowCounters[materialIndex] = 0;
+            }
+
+            const lotIndex = lotRowCounters[materialIndex]++;
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const materialRow = document.getElementById(`materialRow_${materialIndex}`);
+            const isMain = materialRow.dataset.isMain === 'true';
+
+            // Main 분말은 선택 입력, 일반 분말은 숫자 입력
+            let weightInputHtml = '';
+            if (isMain) {
+                weightInputHtml = `
+                    <select id="weightInput_${materialIndex}_${lotIndex}"
+                            class="auto-input-field weight-input"
+                            style="width: 100%; padding: 8px;"
+                            onchange="updateTotalWeight(${materialIndex})">
+                        <option value="">선택하세요</option>
+                        <option value="1000">1 ton (1,000 kg)</option>
+                        <option value="2000">2 ton (2,000 kg)</option>
+                        <option value="3000">3 ton (3,000 kg)</option>
+                        <option value="4000">4 ton (4,000 kg)</option>
+                        <option value="5000">5 ton (5,000 kg)</option>
+                    </select>
+                `;
+            } else {
+                weightInputHtml = `
+                    <input type="number"
+                           id="weightInput_${materialIndex}_${lotIndex}"
+                           class="auto-input-field weight-input"
+                           step="0.01"
+                           style="width: 100%; padding: 8px;"
+                           placeholder="중량계 또는 수동입력"
+                           oninput="updateTotalWeight(${materialIndex})">
+                `;
+            }
+
+            const newRow = document.createElement('tr');
+            newRow.id = `lotRow_${materialIndex}_${lotIndex}`;
+            newRow.innerHTML = `
+                <td style="padding: 10px;">
+                    <input type="text"
+                           id="lotInput_${materialIndex}_${lotIndex}"
+                           class="auto-input-field lot-input"
+                           placeholder="스캔 또는 수동입력"
+                           style="width: 100%; padding: 8px;">
+                </td>
+                <td style="padding: 10px;">
+                    ${weightInputHtml}
+                </td>
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button"
+                            class="btn secondary"
+                            onclick="removeLotRow(${materialIndex}, ${lotIndex})"
+                            style="padding: 6px 12px; font-size: 0.85em; background: #f44336; color: white;">
+                        🗑️ 삭제
+                    </button>
+                </td>
+            `;
+
+            tableBody.appendChild(newRow);
+
+            // 첫 번째 LOT 입력에 포커스
+            setTimeout(() => {
+                document.getElementById(`lotInput_${materialIndex}_${lotIndex}`).focus();
+            }, 100);
+
+            // 합계 업데이트
+            updateTotalWeight(materialIndex);
+        }
+
+        // 합계 중량 업데이트
+        function updateTotalWeight(materialIndex) {
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            let total = 0;
+            let hasAllWeights = rows.length > 0;
+
+            rows.forEach(row => {
+                const weightInput = row.querySelector('[id^="weightInput_"]');
+                if (weightInput) {
+                    const weight = parseFloat(weightInput.value);
+                    if (weight && weight > 0) {
+                        total += weight;
+                    } else {
+                        hasAllWeights = false;
+                    }
+                }
+            });
+
+            // 합계 중량 표시
+            const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
+            if (totalWeightSpan) {
+                totalWeightSpan.textContent = total.toFixed(2);
+            }
+
+            // 판정 버튼 활성화 여부
+            const judgeBtn = document.getElementById(`judgeBtn_${materialIndex}`);
+            if (judgeBtn) {
+                if (hasAllWeights && total > 0) {
+                    judgeBtn.disabled = false;
+                    judgeBtn.style.opacity = '1';
+                } else {
+                    judgeBtn.disabled = true;
+                    judgeBtn.style.opacity = '0.5';
+                }
+            }
+
+            // 판정 결과 초기화
+            const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
+            if (judgeResult) {
+                judgeResult.innerHTML = '';
+                judgeResult.dataset.result = '';
+            }
+
+            // 완료 버튼 비활성화
+            const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
+            if (completeBtn) {
+                completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.5';
+            }
+        }
+
+        // LOT 행 삭제
+        function removeLotRow(materialIndex, lotIndex) {
+            if (confirm('이 LOT를 삭제하시겠습니까?')) {
+                const row = document.getElementById(`lotRow_${materialIndex}_${lotIndex}`);
+                if (row) {
+                    row.remove();
+                }
+                updateTotalWeight(materialIndex);
+            }
+        }
+
+        // 분말 합계 중량 판정
+        function judgeMaterialWeight(materialIndex) {
+            const materialRow = document.getElementById(`materialRow_${materialIndex}`);
+            const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
+            const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
+            const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
+
+            const totalWeight = parseFloat(totalWeightSpan.textContent);
+            const minWeight = parseFloat(materialRow.dataset.minWeight);
+            const maxWeight = parseFloat(materialRow.dataset.maxWeight);
+
+            // 모든 LOT 번호가 입력되었는지 확인
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            let allLotsHaveNumbers = true;
+
+            rows.forEach(row => {
+                const lotInput = row.querySelector('[id^="lotInput_"]');
+                if (!lotInput || !lotInput.value.trim()) {
+                    allLotsHaveNumbers = false;
+                }
+            });
+
+            if (!allLotsHaveNumbers) {
+                alert('모든 LOT 번호를 입력해주세요.');
+                return;
+            }
+
+            // 합부 판정
+            if (totalWeight >= minWeight && totalWeight <= maxWeight) {
+                // 합격
+                judgeResult.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">⭕ 합격</span>';
+                judgeResult.dataset.result = 'pass';
+                completeBtn.disabled = false;
+                completeBtn.style.opacity = '1';
+
+                // 모든 입력 필드 비활성화
+                rows.forEach(row => {
+                    const lotInput = row.querySelector('[id^="lotInput_"]');
+                    const weightInput = row.querySelector('[id^="weightInput_"]');
+                    if (lotInput) lotInput.disabled = true;
+                    if (weightInput) weightInput.disabled = true;
+                });
+
+                // LOT 추가 및 판정 버튼 비활성화
+                document.getElementById(`addLotBtn_${materialIndex}`).disabled = true;
+                document.getElementById(`judgeBtn_${materialIndex}`).disabled = true;
+            } else {
+                // 불합격
+                judgeResult.innerHTML = '<span style="color: #F44336; font-size: 1.1em;">❌ 불합격</span>';
+                judgeResult.dataset.result = 'fail';
+                completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.5';
+
+                // 불합격 사유 표시
+                let reason = '';
+                if (totalWeight < minWeight) {
+                    reason = `중량 부족 (${(minWeight - totalWeight).toFixed(2)} kg 부족)`;
+                } else {
+                    reason = `중량 초과 (+${(totalWeight - maxWeight).toFixed(2)} kg 초과)`;
+                }
+                alert(`불합격: ${reason}\n허용 범위: ${minWeight.toFixed(2)} ~ ${maxWeight.toFixed(2)} kg\n합계 중량: ${totalWeight.toFixed(2)} kg`);
+            }
+        }
+
+        // 분말 투입 완료
+        function completeMaterialInput(materialIndex) {
+            // 저장 처리 (향후 서버 전송 구현)
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            const lots = [];
+
+            rows.forEach(row => {
+                const lotInput = row.querySelector('[id^="lotInput_"]');
+                const weightInput = row.querySelector('[id^="weightInput_"]');
+                if (lotInput && weightInput) {
+                    lots.push({
+                        lotNumber: lotInput.value,
+                        weight: parseFloat(weightInput.value)
+                    });
+                }
+            });
+
+            console.log(`분말 ${materialIndex} 투입 완료:`, lots);
+
+            // 현재 분말 비활성화 및 완료 표시
+            const currentRow = document.getElementById(`materialRow_${materialIndex}`);
+            currentRow.classList.remove('active');
+            currentRow.querySelector('.status-badge').className = 'status-badge completed';
+            currentRow.querySelector('.status-badge').textContent = '완료';
+
+            // 모든 버튼 비활성화
+            document.getElementById(`addLotBtn_${materialIndex}`).disabled = true;
+            document.getElementById(`completeMaterialBtn_${materialIndex}`).disabled = true;
+
+            // 진행 상황 업데이트
+            const totalRows = document.querySelectorAll('.material-input-row').length;
+            const completedRows = materialIndex + 1;
+            document.getElementById('autoInputProgress').textContent = `${completedRows}/${totalRows}`;
+
+            // 다음 분말이 있으면 활성화
+            const nextIndex = materialIndex + 1;
+            if (nextIndex < totalRows) {
+                setTimeout(() => {
+                    activateMaterialRow(nextIndex);
+                }, 300);
+            } else {
+                // 모든 작업 완료
+                setTimeout(() => {
+                    if (confirm('모든 원재료 투입이 완료되었습니다.\n배합작업 페이지로 돌아가시겠습니까?')) {
+                        showPage('blending');
+                    }
+                }, 500);
+            }
+        }
+
+        // 원재료 행 활성화
+        function activateMaterialRow(index) {
+            // 모든 행 비활성화
+            document.querySelectorAll('.material-input-row').forEach(row => {
+                row.classList.remove('active');
+                const badge = row.querySelector('.status-badge');
+                if (badge && badge.textContent !== '완료') {
+                    badge.className = 'status-badge waiting';
+                    badge.textContent = '대기';
+                }
+            });
+
+            // 해당 행 활성화
+            const targetRow = document.getElementById(`materialRow_${index}`);
+            targetRow.classList.add('active');
+            targetRow.querySelector('.status-badge').className = 'status-badge active';
+            targetRow.querySelector('.status-badge').textContent = '진행중';
+
+            // 버튼 활성화
+            document.getElementById(`addLotBtn_${index}`).disabled = false;
+            document.getElementById(`activateBtn_${index}`).style.display = 'none';
+
+            // 첫 LOT 행 추가
+            const tableBody = document.getElementById(`lotTableBody_${index}`);
+            if (tableBody.children.length === 0) {
+                addLotRow(index);
+            }
+        }
+
         // 초기 로드
         window.onload = () => {
-            updateLanguage();
-            loadIncompleteInspections();
+            loadDashboard();
         };

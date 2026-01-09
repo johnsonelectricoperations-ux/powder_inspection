@@ -289,6 +289,7 @@ def _do_start_inspection():
     inspection_type = data.get('inspectionType')
     inspector = data.get('inspector')
     category = data.get('category', 'incoming')  # 기본값은 incoming
+    inspection_date = data.get('inspectionDate')  # 검사일 추가
 
     if not all([powder_name, lot_number]):
         return jsonify({'success': False, 'message': '필수 입력 항목이 누락되었습니다.'})
@@ -318,7 +319,9 @@ def _do_start_inspection():
                     'startTime': to_kst_str(progress_data['start_time']),
                     'completedItems': json.loads(progress_data['completed_items'] or '[]'),
                     'totalItems': json.loads(progress_data['total_items'] or '[]'),
-                    'progress': progress_data['progress']
+                    'progress': progress_data['progress'],
+                    'category': progress_data.get('category', 'incoming'),
+                    'inspectionDate': progress_data.get('inspection_date')
                 },
                 'items': items
             })
@@ -331,6 +334,7 @@ def _do_start_inspection():
         result_row = cursor.fetchone()
 
         if result_row:
+            result_data = dict_from_row(result_row)
             return jsonify({
                 'success': True,
                 'isExisting': True,
@@ -340,7 +344,9 @@ def _do_start_inspection():
                     'inspectionType': inspection_type,
                     'inspector': inspector,
                     'isCompleted': True,
-                    'progress': '완료'
+                    'progress': '완료',
+                    'category': result_data.get('category', 'incoming'),
+                    'inspectionDate': result_data.get('inspection_date')
                 },
                 'items': []
             })
@@ -356,10 +362,10 @@ def _do_start_inspection():
         # 진행중검사 테이블에 추가
         cursor.execute('''
             INSERT INTO inspection_progress
-            (powder_name, lot_number, inspection_type, inspector, completed_items, total_items, progress, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (powder_name, lot_number, inspection_type, inspector, completed_items, total_items, progress, category, inspection_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (powder_name, lot_number, inspection_type, inspector,
-              json.dumps([]), json.dumps(item_names), f'0/{len(item_names)}', category))
+              json.dumps([]), json.dumps(item_names), f'0/{len(item_names)}', category, inspection_date))
 
         conn.commit()
 
@@ -372,7 +378,9 @@ def _do_start_inspection():
                 'inspectionType': inspection_type,
                 'inspector': inspector,
                 'completedItems': [],
-                'totalItems': item_names
+                'totalItems': item_names,
+                'category': category,
+                'inspectionDate': inspection_date
             },
             'items': items
         })
@@ -452,6 +460,53 @@ def delete_incomplete_inspection(powder_name, lot_number):
             conn.commit()
 
             return jsonify({'success': True, 'message': '진행중인 검사가 삭제되었습니다.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
+# API: 검사자 업데이트
+# ============================================
+
+@app.route('/api/update-inspector', methods=['PUT'])
+def update_inspector():
+    """검사 진행 중 검사자 변경"""
+    try:
+        data = request.get_json()
+        powder_name = data.get('powderName')
+        lot_number = data.get('lotNumber')
+        inspector = data.get('inspector')
+        category = data.get('category', 'incoming')
+
+        if not all([powder_name, lot_number, inspector]):
+            return jsonify({'success': False, 'message': '필수 항목이 누락되었습니다.'})
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # inspection_progress 테이블 업데이트 (category도 조건에 포함)
+            cursor.execute('''
+                UPDATE inspection_progress
+                SET inspector = ?
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (inspector, powder_name, lot_number, category))
+
+            # 진행중 검사 업데이트 성공 여부 확인
+            progress_updated = cursor.rowcount > 0
+
+            # inspection_result 테이블도 업데이트 (이미 생성된 경우)
+            cursor.execute('''
+                UPDATE inspection_result
+                SET inspector = ?
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (inspector, powder_name, lot_number, category))
+
+            conn.commit()
+
+            if not progress_updated:
+                return jsonify({'success': False, 'message': '검사를 찾을 수 없습니다.'})
+
+            return jsonify({'success': True, 'message': '검사자가 변경되었습니다.'})
+
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -668,6 +723,52 @@ def search_inspection_results():
                 convert_times_in_dict(r)
 
             return jsonify({'success': True, 'data': results})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
+# API: 검사 결과 삭제
+# ============================================
+
+@app.route('/api/inspection-result/<powder_name>/<lot_number>', methods=['DELETE'])
+def delete_inspection_result(powder_name, lot_number):
+    """검사 결과 삭제 (관리자 비밀번호 필요)"""
+    try:
+        # 관리자 비밀번호 확인
+        data = request.get_json() or {}
+        admin_password = data.get('adminPassword', '')
+        category = data.get('category', 'incoming')
+
+        if not check_admin_password(admin_password):
+            return jsonify({'success': False, 'message': '관리자 비밀번호가 일치하지 않습니다.'})
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 검사 결과 확인
+            cursor.execute('''
+                SELECT * FROM inspection_result
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (powder_name, lot_number, category))
+
+            result = cursor.fetchone()
+
+            if not result:
+                return jsonify({'success': False, 'message': '검사 결과를 찾을 수 없습니다.'})
+
+            # 검사 결과 삭제
+            cursor.execute('''
+                DELETE FROM inspection_result
+                WHERE powder_name = ? AND lot_number = ? AND category = ?
+            ''', (powder_name, lot_number, category))
+
+            conn.commit()
+
+            return jsonify({
+                'success': True,
+                'message': f'검사 결과가 삭제되었습니다. (분말: {powder_name}, LOT: {lot_number})'
+            })
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -1052,18 +1153,20 @@ def _do_save_to_result_table(powder_name, lot_number, item_name, values, average
         else:
             # 새 행 생성
             cursor.execute('''
-                SELECT inspection_type, inspector FROM inspection_progress
+                SELECT inspection_type, inspector, category, inspection_date FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
 
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
+            category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
+            inspection_date = progress_data[3] if progress_data and len(progress_data) > 3 else None
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector)
-                VALUES (?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category, inspection_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category, inspection_date))
 
             new_id = cursor.lastrowid
 
@@ -1275,18 +1378,20 @@ def _do_save_particle_to_result_table(powder_name, lot_number, particle_data, ov
             cursor.execute(query, update_values)
         else:
             cursor.execute('''
-                SELECT inspection_type, inspector FROM inspection_progress
+                SELECT inspection_type, inspector, category, inspection_date FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
             progress_data = cursor.fetchone()
 
             inspection_type = progress_data[0] if progress_data else '일상점검'
             inspector = progress_data[1] if progress_data else '미지정'
+            category = progress_data[2] if progress_data and len(progress_data) > 2 else 'incoming'
+            inspection_date = progress_data[3] if progress_data and len(progress_data) > 3 else None
 
             cursor.execute('''
-                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector)
-                VALUES (?, ?, ?, ?)
-            ''', (powder_name, lot_number, inspection_type, inspector))
+                INSERT INTO inspection_result (powder_name, lot_number, inspection_type, inspector, category, inspection_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (powder_name, lot_number, inspection_type, inspector, category, inspection_date))
 
             new_id = cursor.lastrowid
             update_values.append(new_id)
@@ -2215,12 +2320,19 @@ def get_blending_work(work_id):
 
 @app.route('/api/blending/work/<int:work_id>', methods=['DELETE'])
 def delete_blending_work(work_id):
-    """배합 작업 삭제 (진행중인 작업만 삭제 가능)"""
+    """배합 작업 삭제 (관리자 비밀번호 필요)"""
     try:
+        # 관리자 비밀번호 확인
+        data = request.get_json() or {}
+        admin_password = data.get('adminPassword', '')
+
+        if not check_admin_password(admin_password):
+            return jsonify({'success': False, 'message': '관리자 비밀번호가 일치하지 않습니다.'})
+
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            # 작업 상태 확인
+            # 작업 정보 확인
             cursor.execute('''
                 SELECT status, batch_lot FROM blending_work WHERE id = ?
             ''', (work_id,))
@@ -2229,9 +2341,6 @@ def delete_blending_work(work_id):
 
             if not work:
                 return jsonify({'success': False, 'message': '배합 작업을 찾을 수 없습니다.'})
-
-            if work[0] == 'completed':
-                return jsonify({'success': False, 'message': '완료된 작업은 삭제할 수 없습니다.'})
 
             # 관련 원재료 투입 데이터 삭제
             cursor.execute('''
@@ -2253,11 +2362,15 @@ def delete_blending_work(work_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/api/completed-lots/<powder_name>', methods=['GET'])
-def get_completed_lots(powder_name):
+@app.route('/api/completed-lots', methods=['GET'])
+def get_completed_lots():
     """특정 분말의 수입검사 완료된 LOT 번호 목록 조회"""
     try:
+        powder_name = request.args.get('powder_name')
         category = request.args.get('category', 'incoming')
+
+        if not powder_name:
+            return jsonify({'success': False, 'message': 'powder_name is required'})
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()
@@ -2288,24 +2401,42 @@ def get_completed_lots(powder_name):
 def validate_material_lot(lot_number):
     """원재료 LOT 검증 (수입검사 완료 여부 확인)"""
     try:
+        # 쿼리 파라미터로 분말명 받기
+        powder_name = request.args.get('powder_name', '')
+
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            # 수입검사 결과에서 LOT 조회
-            cursor.execute('''
-                SELECT powder_name, lot_number, final_result, inspection_time
-                FROM inspection_result
-                WHERE lot_number = ? AND category = 'incoming'
-            ''', (lot_number,))
+            # 수입검사 결과에서 LOT와 분말명으로 조회
+            if powder_name:
+                cursor.execute('''
+                    SELECT powder_name, lot_number, final_result, inspection_time
+                    FROM inspection_result
+                    WHERE lot_number = ? AND powder_name = ? AND category = 'incoming'
+                ''', (lot_number, powder_name))
+            else:
+                # 하위 호환성: 분말명이 없으면 LOT만으로 검색 (기존 방식)
+                cursor.execute('''
+                    SELECT powder_name, lot_number, final_result, inspection_time
+                    FROM inspection_result
+                    WHERE lot_number = ? AND category = 'incoming'
+                ''', (lot_number,))
 
             row = cursor.fetchone()
 
             if not row:
-                return jsonify({
-                    'success': False,
-                    'valid': False,
-                    'message': f'LOT {lot_number}는 수입검사 기록이 없습니다.'
-                })
+                if powder_name:
+                    return jsonify({
+                        'success': False,
+                        'valid': False,
+                        'message': f'LOT {lot_number}의 {powder_name} 수입검사 기록이 없습니다.'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'valid': False,
+                        'message': f'LOT {lot_number}는 수입검사 기록이 없습니다.'
+                    })
 
             result = dict_from_row(row)
 
@@ -2499,7 +2630,8 @@ def get_blending_works():
         status = request.args.get('status', 'all')  # all, completed, in_progress
         product_name = request.args.get('product_name')
         batch_lot = request.args.get('batch_lot')
-        completed_date = request.args.get('completed_date')  # YYYY-MM-DD
+        completed_date_from = request.args.get('completed_date_from')  # YYYY-MM-DD
+        completed_date_to = request.args.get('completed_date_to')  # YYYY-MM-DD
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()
@@ -2529,10 +2661,17 @@ def get_blending_works():
                 where_clauses.append('batch_lot LIKE ?')
                 params.append(f"%{batch_lot}%")
 
-            if completed_date:
-                # filter by DATE(end_time) == completed_date
-                where_clauses.append("DATE(end_time) = ?")
-                params.append(completed_date)
+            # 날짜 범위 필터
+            if completed_date_from and completed_date_to:
+                where_clauses.append("DATE(end_time) BETWEEN ? AND ?")
+                params.append(completed_date_from)
+                params.append(completed_date_to)
+            elif completed_date_from:
+                where_clauses.append("DATE(end_time) >= ?")
+                params.append(completed_date_from)
+            elif completed_date_to:
+                where_clauses.append("DATE(end_time) <= ?")
+                params.append(completed_date_to)
 
             query = base_select
             if where_clauses:
@@ -2545,6 +2684,36 @@ def get_blending_works():
             works = []
             for row in cursor.fetchall():
                 work_dict = dict_from_row(row)
+
+                # 각 배합작업에 대한 검사 상태 조회
+                cursor.execute('''
+                    SELECT final_result
+                    FROM inspection_result
+                    WHERE lot_number = ? AND category = 'mixing'
+                    ORDER BY inspection_time DESC
+                    LIMIT 1
+                ''', (work_dict['batch_lot'],))
+
+                inspection_row = cursor.fetchone()
+                if inspection_row:
+                    work_dict['inspection_status'] = 'completed'
+                    work_dict['inspection_result'] = inspection_row[0]
+                else:
+                    # 진행중인 검사가 있는지 확인
+                    cursor.execute('''
+                        SELECT 1
+                        FROM inspection_progress
+                        WHERE lot_number = ? AND category = 'mixing'
+                        LIMIT 1
+                    ''', (work_dict['batch_lot'],))
+
+                    if cursor.fetchone():
+                        work_dict['inspection_status'] = 'in_progress'
+                        work_dict['inspection_result'] = None
+                    else:
+                        work_dict['inspection_status'] = None
+                        work_dict['inspection_result'] = None
+
                 works.append(work_dict)
 
             return jsonify({'success': True, 'works': works})
@@ -2833,21 +3002,41 @@ def get_blending_orders():
     """배합작업지시서 목록 조회"""
     try:
         status_filter = request.args.get('status', 'all')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
 
         with closing(get_db()) as conn:
             cursor = conn.cursor()
 
-            if status_filter == 'all':
-                cursor.execute('''
+            # 기본 WHERE 조건 구성
+            where_clauses = []
+            params = []
+
+            if status_filter != 'all':
+                where_clauses.append('status = ?')
+                params.append(status_filter)
+
+            if date_from:
+                where_clauses.append('created_date >= ?')
+                params.append(date_from)
+
+            if date_to:
+                where_clauses.append('created_date <= ?')
+                params.append(date_to)
+
+            # SQL 쿼리 구성
+            if where_clauses:
+                where_sql = 'WHERE ' + ' AND '.join(where_clauses)
+                cursor.execute(f'''
                     SELECT * FROM blending_order
-                    ORDER BY created_date DESC, id DESC
-                ''')
+                    {where_sql}
+                    ORDER BY created_date ASC, id ASC
+                ''', params)
             else:
                 cursor.execute('''
                     SELECT * FROM blending_order
-                    WHERE status = ?
-                    ORDER BY created_date DESC, id DESC
-                ''', (status_filter,))
+                    ORDER BY created_date ASC, id ASC
+                ''')
 
             rows = cursor.fetchall()
             orders = []
@@ -3020,6 +3209,346 @@ def get_blending_order_progress(order_id):
                 'completed_weight': completed_weight,
                 'remaining_weight': remaining_weight,
                 'progress_percent': round(progress_percent, 1)
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
+# 관리자 비밀번호 검증
+# ============================================
+
+def check_admin_password(password):
+    """관리자 비밀번호 확인 헬퍼 함수"""
+    import hashlib
+    import os
+
+    password_file = os.path.join(os.path.dirname(__file__), 'password.txt')
+
+    # 파일이 없으면 초기 비밀번호(1234) 생성
+    if not os.path.exists(password_file):
+        default_password = "1234"
+        hashed = hashlib.sha256(default_password.encode()).hexdigest()
+        with open(password_file, 'w') as f:
+            f.write(hashed)
+
+    # 저장된 해시 읽기
+    with open(password_file, 'r') as f:
+        stored_hash = f.read().strip()
+
+    # 입력된 비밀번호 해시화
+    input_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    # 비교
+    return input_hash == stored_hash
+
+@app.route('/api/admin/verify-password', methods=['POST'])
+def verify_admin_password():
+    """관리자 모드 비밀번호 검증"""
+    try:
+        import hashlib
+        import os
+
+        data = request.get_json()
+        input_password = data.get('password', '')
+
+        # 비밀번호 파일 경로
+        password_file = os.path.join(os.path.dirname(__file__), 'password.txt')
+
+        # 파일이 없으면 초기 비밀번호(1234) 생성
+        if not os.path.exists(password_file):
+            default_password = "1234"
+            hashed = hashlib.sha256(default_password.encode()).hexdigest()
+            with open(password_file, 'w') as f:
+                f.write(hashed)
+
+        # 저장된 해시 읽기
+        with open(password_file, 'r') as f:
+            stored_hash = f.read().strip()
+
+        # 입력된 비밀번호 해시화
+        input_hash = hashlib.sha256(input_password.encode()).hexdigest()
+
+        # 비교
+        if input_hash == stored_hash:
+            return jsonify({
+                'success': True,
+                'message': '비밀번호가 확인되었습니다.'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': '비밀번호가 일치하지 않습니다.'
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# ============================================
+# 대시보드 API
+# ============================================
+
+@app.route('/api/dashboard/kpi', methods=['GET'])
+def get_dashboard_kpi():
+    """대시보드 KPI 통계"""
+    try:
+        from datetime import date, timedelta
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            today = date.today().isoformat()
+            week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+            # 1. 오늘 검사 건수
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) = ?
+            ''', (today,))
+            today_inspections = cursor.fetchone()[0]
+
+            # 2. 작업 진도율 (이번주)
+            cursor.execute('''
+                SELECT COALESCE(SUM(total_target_weight), 0)
+                FROM blending_order
+                WHERE DATE(created_date) >= ?
+            ''', (week_start,))
+            target_weight = cursor.fetchone()[0] or 0
+
+            cursor.execute('''
+                SELECT COALESCE(SUM(actual_total_weight), 0)
+                FROM blending_work
+                WHERE DATE(start_time) >= ? AND status = 'completed'
+            ''', (week_start,))
+            actual_weight = cursor.fetchone()[0] or 0
+
+            work_progress = round((actual_weight / target_weight * 100), 1) if target_weight > 0 else 0
+
+            # 3. 이번주 합격률
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed'
+            ''', (week_start,))
+            total_inspections = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'pass'
+            ''', (week_start,))
+            passed_inspections = cursor.fetchone()[0]
+
+            pass_rate = round((passed_inspections / total_inspections * 100), 1) if total_inspections > 0 else 0
+
+            # 4. 이번주 불합격 건수
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'fail'
+            ''', (week_start,))
+            fail_count = cursor.fetchone()[0]
+
+            return jsonify({
+                'success': True,
+                'data': {
+                    'today_inspections': today_inspections,
+                    'work_progress': work_progress,
+                    'pass_rate': pass_rate,
+                    'fail_count': fail_count
+                }
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/work-progress', methods=['GET'])
+def get_work_progress():
+    """작업지시 대비 진도율 (날짜 필터별)"""
+    try:
+        from datetime import date, timedelta
+
+        date_filter = request.args.get('filter', 'week')  # today, week, month
+
+        if date_filter == 'today':
+            start_date = date.today().isoformat()
+        elif date_filter == 'week':
+            start_date = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+        else:  # month
+            start_date = date.today().replace(day=1).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 작업지시별 진도율
+            cursor.execute('''
+                SELECT
+                    bo.work_order_number,
+                    bo.product_name,
+                    bo.total_target_weight,
+                    COALESCE(SUM(bw.actual_total_weight), 0) as completed_weight
+                FROM blending_order bo
+                LEFT JOIN blending_work bw ON bo.id = bw.work_order_id AND bw.status = 'completed'
+                WHERE DATE(bo.created_date) >= ?
+                GROUP BY bo.id, bo.work_order_number, bo.product_name, bo.total_target_weight
+                ORDER BY bo.created_date DESC
+                LIMIT 10
+            ''', (start_date,))
+
+            orders = []
+            for row in cursor.fetchall():
+                work_order = row[0]
+                product = row[1]
+                target = row[2]
+                completed = row[3]
+                progress = round((completed / target * 100), 1) if target > 0 else 0
+
+                orders.append({
+                    'work_order': work_order,
+                    'product': product,
+                    'target': target,
+                    'completed': completed,
+                    'progress': progress
+                })
+
+            return jsonify({
+                'success': True,
+                'data': orders
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/quality-rate', methods=['GET'])
+def get_quality_rate():
+    """검사 합격률 (도넛 차트용)"""
+    try:
+        from datetime import date, timedelta
+
+        week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 합격
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'pass'
+            ''', (week_start,))
+            passed = cursor.fetchone()[0]
+
+            # 불합격
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed' AND final_result = 'fail'
+            ''', (week_start,))
+            failed = cursor.fetchone()[0]
+
+            # 진행중
+            cursor.execute('''
+                SELECT COUNT(*) FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'in_progress'
+            ''', (week_start,))
+            in_progress = cursor.fetchone()[0]
+
+            return jsonify({
+                'success': True,
+                'data': {
+                    'passed': passed,
+                    'failed': failed,
+                    'in_progress': in_progress
+                }
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/daily-trend', methods=['GET'])
+def get_daily_trend():
+    """최근 7일 검사 추이"""
+    try:
+        from datetime import date, timedelta
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            trend_data = []
+
+            for i in range(6, -1, -1):
+                target_date = (date.today() - timedelta(days=i)).isoformat()
+
+                # 수입분말 검사
+                cursor.execute('''
+                    SELECT COUNT(*) FROM inspection_result
+                    WHERE DATE(created_at) = ? AND category = 'incoming' AND status = 'completed'
+                ''', (target_date,))
+                incoming_count = cursor.fetchone()[0]
+
+                # 배합분말 검사
+                cursor.execute('''
+                    SELECT COUNT(*) FROM inspection_result
+                    WHERE DATE(created_at) = ? AND category = 'mixing' AND status = 'completed'
+                ''', (target_date,))
+                mixing_count = cursor.fetchone()[0]
+
+                trend_data.append({
+                    'date': target_date,
+                    'incoming': incoming_count,
+                    'mixing': mixing_count
+                })
+
+            return jsonify({
+                'success': True,
+                'data': trend_data
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/dashboard/powder-status', methods=['GET'])
+def get_powder_status():
+    """분말별 검사 현황 (이번주)"""
+    try:
+        from datetime import date, timedelta
+
+        week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+
+        with closing(get_db()) as conn:
+            cursor = conn.cursor()
+
+            # 분말별 검사 통계
+            cursor.execute('''
+                SELECT
+                    powder_name,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN final_result = 'pass' THEN 1 ELSE 0 END) as passed
+                FROM inspection_result
+                WHERE DATE(created_at) >= ? AND status = 'completed'
+                GROUP BY powder_name
+                ORDER BY total DESC
+                LIMIT 8
+            ''', (week_start,))
+
+            powder_data = []
+            for row in cursor.fetchall():
+                powder_name = row[0]
+                total = row[1]
+                passed = row[2]
+                failed = total - passed
+                pass_rate = round((passed / total * 100), 1) if total > 0 else 0
+
+                powder_data.append({
+                    'powder': powder_name,
+                    'total': total,
+                    'passed': passed,
+                    'failed': failed,
+                    'pass_rate': pass_rate
+                })
+
+            return jsonify({
+                'success': True,
+                'data': powder_data
             })
 
     except Exception as e:
