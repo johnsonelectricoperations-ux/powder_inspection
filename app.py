@@ -2685,6 +2685,30 @@ def get_blending_works():
             for row in cursor.fetchall():
                 work_dict = dict_from_row(row)
 
+                # 시간을 KST로 변환
+                work_dict = convert_times_in_dict(work_dict)
+
+                # 각 배합작업에 대한 진행률 계산 (진행중인 작업만)
+                if work_dict['status'] == 'in_progress':
+                    # 투입 완료된 원재료 개수
+                    cursor.execute('''
+                        SELECT COUNT(DISTINCT powder_name)
+                        FROM material_input
+                        WHERE blending_work_id = ?
+                    ''', (work_dict['id'],))
+                    material_input_count = cursor.fetchone()[0]
+
+                    # 레시피의 전체 원재료 개수
+                    cursor.execute('''
+                        SELECT COUNT(*)
+                        FROM recipe
+                        WHERE product_name = ? AND is_active = 1
+                    ''', (work_dict['product_name'],))
+                    total_materials = cursor.fetchone()[0]
+
+                    work_dict['material_input_count'] = material_input_count
+                    work_dict['total_materials'] = total_materials
+
                 # 각 배합작업에 대한 검사 상태 조회
                 cursor.execute('''
                     SELECT final_result
