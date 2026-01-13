@@ -4935,10 +4935,91 @@ function t(key) {
 
             listContainer.innerHTML = html;
 
-            // 첫 번째 분말에 LOT 행 하나 추가
-            setTimeout(() => {
-                addLotRow(0);
-            }, 100);
+            // materialInputs 처리: 이미 투입 완료된 분말 복원
+            const completedMaterials = new Map();
+            if (materialInputs && materialInputs.length > 0) {
+                materialInputs.forEach(input => {
+                    completedMaterials.set(input.powder_name, {
+                        lots: input.material_lot.split(',').map(lot => lot.trim()),
+                        weight: input.actual_weight
+                    });
+                });
+            }
+
+            let firstIncompleteIndex = -1;
+            let completedCount = 0;
+
+            // 각 분말에 대해 완료 상태 복원
+            materials.forEach((material, idx) => {
+                const materialRow = document.getElementById(`materialRow_${idx}`);
+                const completedData = completedMaterials.get(material.powderName);
+
+                if (completedData) {
+                    // 완료된 분말: 데이터 복원 및 비활성화
+                    completedCount++;
+
+                    // 상태 변경
+                    materialRow.classList.remove('active');
+                    const statusBadge = materialRow.querySelector('.status-badge');
+                    statusBadge.className = 'status-badge completed';
+                    statusBadge.textContent = '완료';
+
+                    // LOT 정보 표시 (읽기 전용)
+                    const tableBody = document.getElementById(`lotTableBody_${idx}`);
+                    const isMain = material.isMain;
+
+                    completedData.lots.forEach((lotNumber, lotIdx) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td style="padding: 10px;">
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" value="${lotNumber}" readonly
+                                           style="flex: 1; padding: 8px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px;">
+                                    <div style="min-width: 60px; font-weight: 600; font-size: 0.9em; color: #4CAF50;">✓ 합격</div>
+                                </div>
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" value="${isMain && completedData.lots.length === 1 ? (completedData.weight).toLocaleString() : ''}" readonly
+                                       style="width: 100%; padding: 8px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+                            </td>
+                            <td style="padding: 10px; text-align: center;">
+                                <span style="color: #999;">-</span>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // 합계 중량 표시
+                    document.getElementById(`totalWeight_${idx}`).textContent = completedData.weight.toFixed(2);
+
+                    // 판정 결과 표시
+                    const judgeResult = document.getElementById(`judgeResult_${idx}`);
+                    judgeResult.innerHTML = '<span style="color: #4CAF50; font-size: 1.1em;">⭕ 합격</span>';
+                    judgeResult.dataset.result = 'pass';
+
+                    // 버튼 비활성화
+                    document.getElementById(`addLotBtn_${idx}`).disabled = true;
+                    document.getElementById(`judgeBtn_${idx}`).disabled = true;
+                    document.getElementById(`completeMaterialBtn_${idx}`).disabled = true;
+                    const activateBtn = document.getElementById(`activateBtn_${idx}`);
+                    if (activateBtn) activateBtn.style.display = 'none';
+                } else {
+                    // 미완료 분말: 첫 번째 미완료 분말 기록
+                    if (firstIncompleteIndex === -1) {
+                        firstIncompleteIndex = idx;
+                    }
+                }
+            });
+
+            // 진행 상황 업데이트
+            document.getElementById('autoInputProgress').textContent = `${completedCount}/${materials.length}`;
+
+            // 첫 번째 미완료 분말 활성화
+            if (firstIncompleteIndex !== -1) {
+                setTimeout(() => {
+                    activateMaterialRow(firstIncompleteIndex);
+                }, 100);
+            }
         }
 
         // 자동입력 원재료 목록 렌더링 (구버전 - 사용 안 함)
