@@ -4814,7 +4814,7 @@ function t(key) {
             // Main 분말 중량 정보 가져오기 (work에서 또는 계산)
             const mainWeights = {};
             recipes.forEach(item => {
-                if (item.powder_category === 'main') {
+                if (item.is_main == 1 || item.is_main === true) {
                     // work.main_powder_weights가 있으면 사용, 없으면 비율로 계산
                     if (work.main_powder_weights && work.main_powder_weights[item.powder_name]) {
                         mainWeights[item.powder_name] = parseFloat(work.main_powder_weights[item.powder_name]);
@@ -4826,7 +4826,7 @@ function t(key) {
             const materials = recipes.map((item, index) => {
                 let calculatedWeight = 0;
 
-                if (item.powder_category === 'main') {
+                if (item.is_main == 1 || item.is_main === true) {
                     // Main은 직접 입력한 중량 사용 또는 비율로 계산
                     calculatedWeight = mainWeights[item.powder_name] || (targetWeight * item.ratio / 100);
                 } else {
@@ -4848,11 +4848,11 @@ function t(key) {
                     maxWeight: maxWeight.toFixed(2),
                     tolerance: tolerance,
                     category: item.powder_category,
-                    isMain: item.powder_category === 'main'
+                    isMain: item.is_main == 1 || item.is_main === true
                 };
 
                 // 디버깅 정보
-                console.log(`[Recipe ${index}] ${item.powder_name}: category="${item.powder_category}", isMain=${material.isMain}`);
+                console.log(`[Recipe ${index}] ${item.powder_name}: category="${item.powder_category}", is_main=${item.is_main}, isMain=${material.isMain}`);
 
                 return material;
             });
