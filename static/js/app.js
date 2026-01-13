@@ -4778,27 +4778,38 @@ function t(key) {
                 return;
             }
 
-            // Main 분말 중량 정보 가져오기 (work에서 또는 계산)
+            // Main 분말 중량 정보 가져오기
             const mainWeights = {};
             recipes.forEach(item => {
                 if (item.is_main == 1 || item.is_main === true) {
-                    // work.main_powder_weights가 있으면 사용, 없으면 비율로 계산
+                    // work.main_powder_weights가 있으면 사용, 없으면 targetWeight를 Main 중량으로 사용
                     if (work.main_powder_weights && work.main_powder_weights[item.powder_name]) {
                         mainWeights[item.powder_name] = parseFloat(work.main_powder_weights[item.powder_name]);
+                    } else {
+                        mainWeights[item.powder_name] = targetWeight;
                     }
                 }
             });
+
+            // Main 분말들의 비율 합계 계산
+            const mainRecipes = recipes.filter(r => r.is_main == 1 || r.is_main === true);
+            const totalMainRatio = mainRecipes.reduce((sum, r) => sum + r.ratio, 0);
+
+            // 전체 배합 총중량 계산: Main 중량 / (Main 비율 / 100)
+            // 예: Main 2000kg, 비율 97.2% → 전체 = 2000 / 0.972 = 2057.61kg
+            const mainTotalWeight = Object.values(mainWeights).reduce((sum, w) => sum + w, 0);
+            const actualTotalWeight = totalMainRatio > 0 ? mainTotalWeight / (totalMainRatio / 100) : targetWeight;
 
             // 각 분말의 필요 중량 계산
             const materials = recipes.map((item, index) => {
                 let calculatedWeight = 0;
 
                 if (item.is_main == 1 || item.is_main === true) {
-                    // Main은 직접 입력한 중량 사용 또는 비율로 계산
-                    calculatedWeight = mainWeights[item.powder_name] || (targetWeight * item.ratio / 100);
+                    // Main 분말: 저장된 중량 또는 targetWeight 사용
+                    calculatedWeight = mainWeights[item.powder_name] || targetWeight;
                 } else {
-                    // Main 외 분말은 비율로 계산
-                    calculatedWeight = targetWeight * item.ratio / 100;
+                    // 첨가분말: 전체 총중량 × 비율로 계산
+                    calculatedWeight = actualTotalWeight * item.ratio / 100;
                 }
 
                 // 허용 오차 범위 계산
