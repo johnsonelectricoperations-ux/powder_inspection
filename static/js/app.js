@@ -5555,7 +5555,7 @@ function t(key) {
         async function completeBlendingWork() {
             try {
                 const response = await fetch(`${API_BASE}/api/blending/complete/${currentAutoInputWorkId}`, {
-                    method: 'POST',
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' }
                 });
 
