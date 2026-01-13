@@ -135,7 +135,7 @@ function t(key) {
             }
 
             // 바코드 라벨 패널 숨기기 (페이지 전환 시)
-            if (pageName !== 'material-input') {
+            if (pageName !== 'auto-input') {
                 const labelPanel = document.getElementById('labelPanel');
                 if (labelPanel) {
                     labelPanel.style.display = 'none';
@@ -178,6 +178,12 @@ function t(key) {
                 loadBlendingWorks();
             } else if (pageName === 'blending-orders') {
                 loadBlendingOrdersPage();
+            } else if (pageName === 'traceability') {
+                // 추적성 조회 페이지 초기화
+                const resultsDiv = document.getElementById('traceabilityResults');
+                if (resultsDiv) {
+                    resultsDiv.innerHTML = '';
+                }
             }
         }
 
