@@ -3343,8 +3343,9 @@ function t(key) {
 
                 if (data.success) {
                     alert(`배합 작업이 시작되었습니다.\n배합 LOT: ${data.batch_lot}`);
-                    // 원재료 투입 페이지로 이동 (배합작업 메뉴에서 시작)
-                    loadMaterialInputPage(data.work_id, 'blending');
+                    // 자동입력 페이지로 이동하면서 work_id 저장
+                    sessionStorage.setItem('currentWorkId', data.work_id);
+                    loadAutoInputPage(data.work_id, 'blending');
                 } else {
                     alert('작업 시작 실패: ' + data.message);
                 }
@@ -5449,7 +5450,42 @@ function t(key) {
         // 자동입력 작업 화면 관련 함수
         // ==========================================
 
-        // 자동입력 모드 시작
+        // work_id로 자동입력 페이지 로드 (DB 연동)
+        let currentAutoInputWorkId = null;
+        let currentAutoInputWork = null;
+        let currentAutoInputRecipes = [];
+
+        async function loadAutoInputPage(workId, sourcePage = 'blending') {
+            try {
+                // DB에서 배합작업 정보 가져오기
+                const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert('배합 작업 로딩 실패: ' + data.message);
+                    return;
+                }
+
+                currentAutoInputWorkId = workId;
+                currentAutoInputWork = data.work;
+                currentAutoInputRecipes = data.recipes;
+
+                // 자동입력 페이지로 이동
+                showPage('auto-input');
+
+                // 작업 정보 표시
+                document.getElementById('autoInputProductName').textContent = data.work.product_name;
+                document.getElementById('autoInputBatchLot').textContent = data.work.batch_lot;
+                document.getElementById('autoInputTargetWeight').textContent = parseFloat(data.work.target_total_weight).toLocaleString();
+
+                // 원재료 목록 렌더링
+                await renderAutoInputMaterialListFromDB(data.work, data.recipes, data.material_inputs || []);
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        // 자동입력 모드 시작 (구버전 - 사용 안 함)
         async function startAutoInputMode() {
             // 배합작업 폼 검증
             const productName = document.getElementById('blendingProductName').value;
@@ -5480,7 +5516,168 @@ function t(key) {
             await renderAutoInputMaterialList();
         }
 
-        // 자동입력 원재료 목록 렌더링
+        // DB에서 가져온 데이터로 자동입력 원재료 목록 렌더링
+        async function renderAutoInputMaterialListFromDB(work, recipes, materialInputs) {
+            const listContainer = document.getElementById('autoInputMaterialList');
+            const targetWeight = parseFloat(work.target_total_weight);
+
+            if (!recipes || recipes.length === 0) {
+                listContainer.innerHTML = '<div class="empty-message">Recipe 정보가 없습니다.</div>';
+                return;
+            }
+
+            // Main 분말 중량 정보 가져오기 (work에서 또는 계산)
+            const mainWeights = {};
+            recipes.forEach(item => {
+                if (item.powder_category === 'main') {
+                    // work.main_powder_weights가 있으면 사용, 없으면 비율로 계산
+                    if (work.main_powder_weights && work.main_powder_weights[item.powder_name]) {
+                        mainWeights[item.powder_name] = parseFloat(work.main_powder_weights[item.powder_name]);
+                    }
+                }
+            });
+
+            // 각 분말의 필요 중량 계산
+            const materials = recipes.map((item, index) => {
+                let calculatedWeight = 0;
+
+                if (item.powder_category === 'main') {
+                    // Main은 직접 입력한 중량 사용 또는 비율로 계산
+                    calculatedWeight = mainWeights[item.powder_name] || (targetWeight * item.ratio / 100);
+                } else {
+                    // Main 외 분말은 비율로 계산
+                    calculatedWeight = targetWeight * item.ratio / 100;
+                }
+
+                // 허용 오차 범위 계산
+                const tolerance = item.tolerance_percent || 5;
+                const minWeight = calculatedWeight * (1 - tolerance / 100);
+                const maxWeight = calculatedWeight * (1 + tolerance / 100);
+
+                return {
+                    index: index,
+                    powderName: item.powder_name,
+                    ratio: item.ratio,
+                    calculatedWeight: calculatedWeight.toFixed(2),
+                    minWeight: minWeight.toFixed(2),
+                    maxWeight: maxWeight.toFixed(2),
+                    tolerance: tolerance,
+                    category: item.powder_category,
+                    isMain: item.powder_category === 'main'
+                };
+            });
+
+            // 진행 상황 업데이트
+            document.getElementById('autoInputProgress').textContent = `0/${materials.length}`;
+
+            // HTML 생성
+            let html = '';
+            materials.forEach((material, idx) => {
+                const rowClass = idx === 0 ? 'material-input-row active' : 'material-input-row';
+                const statusBadge = idx === 0 ? '<span class="status-badge active">진행중</span>' : '<span class="status-badge waiting">대기</span>';
+
+                html += `
+                    <div class="${rowClass}" id="materialRow_${idx}" data-index="${idx}"
+                         data-min-weight="${material.minWeight}"
+                         data-max-weight="${material.maxWeight}"
+                         data-is-main="${material.isMain}"
+                         data-powder-name="${material.powderName}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <h4 style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 1.3em; font-weight: 700; color: #333;">${material.powderName}</span>
+                                    ${material.isMain ? '<span style="background: #2196F3; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600;">MAIN</span>' : ''}
+                                    ${statusBadge}
+                                </h4>
+                                <p style="margin: 0; color: #666; font-size: 0.9em;">
+                                    비율: ${material.ratio}% |
+                                    목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
+                                    허용오차: ±${material.tolerance}%
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" class="btn secondary" onclick="addLotRow(${idx})"
+                                        id="addLotBtn_${idx}" ${idx !== 0 ? 'disabled' : ''}
+                                        style="padding: 8px 16px; font-size: 0.9em;">
+                                    ➕ LOT 추가
+                                </button>
+                                <button type="button" class="btn" onclick="activateMaterialRow(${idx})"
+                                        id="activateBtn_${idx}" style="${idx === 0 ? 'display:none;' : ''}">
+                                    작업 시작
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LOT 입력 테이블 -->
+                        <div style="background: #fafafa; border-radius: 8px; padding: 15px;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #e0e0e0;">
+                                        <th style="padding: 10px; text-align: left; width: 40%;">📱 LOT 번호</th>
+                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (kg)</th>
+                                        <th style="padding: 10px; text-align: center; width: 20%;">작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lotTableBody_${idx}">
+                                    <!-- LOT 행들이 여기에 추가됨 -->
+                                </tbody>
+                            </table>
+
+                            <!-- 합계 및 판정 영역 -->
+                            <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #2196F3;">
+                                <div style="display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 15px; align-items: center;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">합계 중량</div>
+                                        <div style="font-size: 1.2em; font-weight: 700; color: #333;">
+                                            <span id="totalWeight_${idx}">0.00</span> kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 허용 중량 범위 -->
+                                    <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
+                                        <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
+                                        <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
+                                            ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
+                                        </div>
+                                    </div>
+
+                                    <!-- 판정 버튼 -->
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <button type="button"
+                                                class="btn"
+                                                onclick="judgeMaterialWeight(${idx})"
+                                                id="judgeBtn_${idx}"
+                                                disabled
+                                                style="padding: 10px 16px; font-size: 0.95em; background: #FF9800; color: white; border: none; min-width: 80px; opacity: 0.5;">
+                                            🔍 판정
+                                        </button>
+                                        <div id="judgeResult_${idx}" style="font-weight: 700; font-size: 1em; min-width: 70px; text-align: center;">
+                                        </div>
+                                    </div>
+
+                                    <!-- 완료 버튼 -->
+                                    <div>
+                                        <button type="button" class="btn" onclick="completeAutoInputMaterial(${idx})"
+                                                id="completeMaterialBtn_${idx}" disabled style="opacity: 0.5; width: 100%;">
+                                            ✓ 이 분말 투입 완료
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+
+            // 첫 번째 분말에 LOT 행 하나 추가
+            setTimeout(() => {
+                addLotRow(0);
+            }, 100);
+        }
+
+        // 자동입력 원재료 목록 렌더링 (구버전 - 사용 안 함)
         async function renderAutoInputMaterialList() {
             const listContainer = document.getElementById('autoInputMaterialList');
             const targetWeight = parseFloat(document.getElementById('blendingTargetWeight').value);
@@ -5845,6 +6042,128 @@ function t(key) {
         }
 
         // 분말 투입 완료
+        // 자동입력 페이지에서 분말 투입 완료 (DB 저장)
+        async function completeAutoInputMaterial(materialIndex) {
+            if (!currentAutoInputWorkId || !currentAutoInputWork) {
+                alert('작업 정보가 없습니다.');
+                return;
+            }
+
+            const materialRow = document.getElementById(`materialRow_${materialIndex}`);
+            const powderName = materialRow.dataset.powderName;
+            const isMain = materialRow.dataset.isMain === 'true';
+            const minWeight = parseFloat(materialRow.dataset.minWeight);
+            const maxWeight = parseFloat(materialRow.dataset.maxWeight);
+
+            // LOT 정보 수집
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            const lots = [];
+            let totalWeight = 0;
+
+            rows.forEach(row => {
+                const lotInput = row.querySelector('[id^="lotInput_"]');
+                const weightInput = row.querySelector('[id^="weightInput_"]');
+                if (lotInput && weightInput && lotInput.value && weightInput.value) {
+                    const weight = parseFloat(weightInput.value);
+                    lots.push({
+                        lotNumber: lotInput.value.trim(),
+                        weight: weight
+                    });
+                    totalWeight += weight;
+                }
+            });
+
+            if (lots.length === 0) {
+                alert('최소 1개의 LOT를 입력하세요.');
+                return;
+            }
+
+            // 중량 판정 확인
+            const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
+            if (!judgeResult || judgeResult.textContent !== 'OK') {
+                alert('중량 판정이 OK여야 저장할 수 있습니다.\n판정 버튼을 먼저 클릭하세요.');
+                return;
+            }
+
+            try {
+                // 각 LOT별로 DB에 저장
+                for (const lot of lots) {
+                    const response = await fetch(`${API_BASE}/api/blending/material-input`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            blending_work_id: currentAutoInputWorkId,
+                            powder_name: powderName,
+                            powder_category: isMain ? 'main' : 'sub',
+                            material_lot: lot.lotNumber,
+                            target_weight: (minWeight + maxWeight) / 2,
+                            actual_weight: lot.weight,
+                            tolerance_percent: 5,
+                            operator: currentAutoInputWork.operator
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        alert(`저장 실패: ${data.message}`);
+                        return;
+                    }
+                }
+
+                alert(`✓ ${powderName} 투입이 기록되었습니다.`);
+
+                // 현재 분말 비활성화 및 완료 표시
+                materialRow.classList.remove('active');
+                materialRow.querySelector('.status-badge').className = 'status-badge completed';
+                materialRow.querySelector('.status-badge').textContent = '완료';
+
+                // 모든 버튼 비활성화
+                document.getElementById(`addLotBtn_${materialIndex}`).disabled = true;
+                document.getElementById(`completeMaterialBtn_${materialIndex}`).disabled = true;
+
+                // 진행 상황 업데이트
+                const totalRows = document.querySelectorAll('.material-input-row').length;
+                const completedRows = materialIndex + 1;
+                document.getElementById('autoInputProgress').textContent = `${completedRows}/${totalRows}`;
+
+                // 다음 분말이 있으면 활성화
+                const nextIndex = materialIndex + 1;
+                if (nextIndex < totalRows) {
+                    setTimeout(() => {
+                        activateMaterialRow(nextIndex);
+                    }, 300);
+                } else {
+                    // 모든 작업 완료 - 배합작업 상태를 완료로 변경
+                    await completeBlendingWork();
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
+        // 배합작업 완료 처리
+        async function completeBlendingWork() {
+            try {
+                const response = await fetch(`${API_BASE}/api/blending/complete/${currentAutoInputWorkId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('✓ 모든 원재료 투입이 완료되었습니다.\n배합작업이 완료되었습니다.');
+                    showPage('blending');
+                    loadBlendingOrdersForBlending();
+                    loadInProgressWorks();
+                } else {
+                    alert('배합작업 완료 처리 실패: ' + data.message);
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+
         function completeMaterialInput(materialIndex) {
             // 저장 처리 (향후 서버 전송 구현)
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
