@@ -5895,6 +5895,7 @@ function t(key) {
                                class="auto-input-field lot-input"
                                placeholder="스캔 또는 수동입력"
                                style="flex: 1; padding: 8px;"
+                               oninput="resetLotValidation(${materialIndex}, ${lotIndex})"
                                onblur="validateAutoInputLot(${materialIndex}, ${lotIndex}, '${powderName}')">
                         <div id="lotValidation_${materialIndex}_${lotIndex}" style="min-width: 60px; font-weight: 600; font-size: 0.9em;"></div>
                     </div>
@@ -5947,6 +5948,26 @@ function t(key) {
             }
         }
 
+        // LOT 검증 상태 초기화 (입력 시)
+        function resetLotValidation(materialIndex, lotIndex) {
+            const lotInput = document.getElementById(`lotInput_${materialIndex}_${lotIndex}`);
+            const validationDiv = document.getElementById(`lotValidation_${materialIndex}_${lotIndex}`);
+
+            if (lotInput) {
+                lotInput.style.borderColor = '#ddd';
+                lotInput.style.borderWidth = '1px';
+                lotInput.dataset.validated = '';
+                lotInput.dataset.alertShown = 'false'; // 플래그 초기화
+            }
+
+            if (validationDiv) {
+                validationDiv.innerHTML = '';
+            }
+
+            // 판정 버튼 비활성화
+            updateJudgeButtonState(materialIndex);
+        }
+
         // LOT 번호 검증
         async function validateAutoInputLot(materialIndex, lotIndex, powderName) {
             const lotInput = document.getElementById(`lotInput_${materialIndex}_${lotIndex}`);
@@ -5979,6 +6000,7 @@ function t(key) {
                 lotInput.style.borderColor = '#4CAF50';
                 lotInput.style.borderWidth = '2px';
                 lotInput.dataset.validated = 'true';
+                lotInput.dataset.alertShown = 'false'; // 플래그 초기화
             } else {
                 // 불합격 또는 미검사 LOT
                 validationDiv.innerHTML = '<span style="color: #f44336;">✗ 불가</span>';
@@ -5986,12 +6008,13 @@ function t(key) {
                 lotInput.style.borderWidth = '2px';
                 lotInput.dataset.validated = 'false';
 
-                // 경고 메시지
-                setTimeout(() => {
-                    alert(`⚠️ LOT 번호 검증 실패\n\n입력된 LOT: ${lotNumber}\n분말명: ${powderName}\n\n이 LOT는 수입검사 합격 목록에 없습니다.\n합격된 LOT만 사용할 수 있습니다.`);
-                    lotInput.focus();
-                    lotInput.select();
-                }, 100);
+                // 경고 메시지 (한 번만 표시)
+                if (lotInput.dataset.alertShown !== 'true') {
+                    lotInput.dataset.alertShown = 'true';
+                    setTimeout(() => {
+                        alert(`⚠️ LOT 번호 검증 실패\n\n입력된 LOT: ${lotNumber}\n분말명: ${powderName}\n\n이 LOT는 수입검사 합격 목록에 없습니다.\n합격된 LOT만 사용할 수 있습니다.`);
+                    }, 100);
+                }
             }
 
             // 판정 버튼 활성화 상태 업데이트
