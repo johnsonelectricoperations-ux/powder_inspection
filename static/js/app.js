@@ -5568,7 +5568,7 @@ function t(key) {
                         loadBlendingOrdersForBlending();
                     } catch (e) { /* noop */ }
                     try {
-                        loadInProgressWorks();
+                        loadInProgressBlendingWorks();
                     } catch (e) { /* noop */ }
 
                     // 최신 작업 정보 가져오기
