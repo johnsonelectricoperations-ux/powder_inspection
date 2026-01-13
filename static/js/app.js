@@ -4835,7 +4835,7 @@ function t(key) {
                 }
 
                 // 허용 오차 범위 계산
-                const tolerance = item.tolerance_percent || 5;
+                const tolerance = item.tolerance_percent !== undefined && item.tolerance_percent !== null ? item.tolerance_percent : 5;
                 const minWeight = calculatedWeight * (1 - tolerance / 100);
                 const maxWeight = calculatedWeight * (1 + tolerance / 100);
 
@@ -4997,7 +4997,7 @@ function t(key) {
                 }
 
                 // 허용 오차 범위 계산
-                const tolerance = item.tolerance_percent || 5;
+                const tolerance = item.tolerance_percent !== undefined && item.tolerance_percent !== null ? item.tolerance_percent : 5;
                 const minWeight = calculatedWeight * (1 - tolerance / 100);
                 const maxWeight = calculatedWeight * (1 + tolerance / 100);
 
