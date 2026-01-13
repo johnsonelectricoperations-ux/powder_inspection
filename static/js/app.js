@@ -5518,28 +5518,28 @@ function t(key) {
             }
 
             try {
-                // 각 LOT별로 DB에 저장
-                for (const lot of lots) {
-                    const response = await fetch(`${API_BASE}/api/blending/material-input`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            blending_work_id: currentAutoInputWorkId,
-                            powder_name: powderName,
-                            powder_category: isMain ? 'main' : 'sub',
-                            material_lot: lot.lotNumber,
-                            target_weight: (minWeight + maxWeight) / 2,
-                            actual_weight: lot.weight,
-                            tolerance_percent: tolerance,
-                            operator: currentAutoInputWork.operator
-                        })
-                    });
+                // 복수 LOT를 하나의 레코드로 저장 (LOT는 쉼표로 구분)
+                const lotNumbers = lots.map(lot => lot.lotNumber).join(',');
 
-                    const data = await response.json();
-                    if (!data.success) {
-                        alert(`저장 실패: ${data.message}`);
-                        return;
-                    }
+                const response = await fetch(`${API_BASE}/api/blending/material-input`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        blending_work_id: currentAutoInputWorkId,
+                        powder_name: powderName,
+                        powder_category: isMain ? 'main' : 'sub',
+                        material_lot: lotNumbers,
+                        target_weight: (minWeight + maxWeight) / 2,
+                        actual_weight: totalWeight,
+                        tolerance_percent: tolerance,
+                        operator: currentAutoInputWork.operator
+                    })
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    alert(`저장 실패: ${data.message}`);
+                    return;
                 }
 
                 alert(`✓ ${powderName} 투입이 기록되었습니다.`);
