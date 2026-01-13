@@ -5457,6 +5457,10 @@ function t(key) {
 
         async function loadAutoInputPage(workId, sourcePage = 'blending') {
             try {
+                // 캐시 초기화
+                approvedLotsCache = {};
+                lotRowCounters = {};
+
                 // DB에서 배합작업 정보 가져오기
                 const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
                 const data = await response.json();
@@ -5840,6 +5844,7 @@ function t(key) {
 
         // LOT 행 추가
         let lotRowCounters = {}; // 각 분말별 LOT 행 카운터
+        let approvedLotsCache = {}; // 분말별 합격 LOT 캐시
 
         function addLotRow(materialIndex) {
             if (!lotRowCounters[materialIndex]) {
@@ -5850,6 +5855,7 @@ function t(key) {
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
             const materialRow = document.getElementById(`materialRow_${materialIndex}`);
             const isMain = materialRow.dataset.isMain === 'true';
+            const powderName = materialRow.dataset.powderName;
 
             // Main 분말은 선택 입력, 일반 분말은 숫자 입력
             let weightInputHtml = '';
@@ -5883,11 +5889,15 @@ function t(key) {
             newRow.id = `lotRow_${materialIndex}_${lotIndex}`;
             newRow.innerHTML = `
                 <td style="padding: 10px;">
-                    <input type="text"
-                           id="lotInput_${materialIndex}_${lotIndex}"
-                           class="auto-input-field lot-input"
-                           placeholder="스캔 또는 수동입력"
-                           style="width: 100%; padding: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text"
+                               id="lotInput_${materialIndex}_${lotIndex}"
+                               class="auto-input-field lot-input"
+                               placeholder="스캔 또는 수동입력"
+                               style="flex: 1; padding: 8px;"
+                               onblur="validateAutoInputLot(${materialIndex}, ${lotIndex}, '${powderName}')">
+                        <div id="lotValidation_${materialIndex}_${lotIndex}" style="min-width: 60px; font-weight: 600; font-size: 0.9em;"></div>
+                    </div>
                 </td>
                 <td style="padding: 10px;">
                     ${weightInputHtml}
@@ -5904,6 +5914,9 @@ function t(key) {
 
             tableBody.appendChild(newRow);
 
+            // 합격 LOT 목록 미리 로드
+            loadApprovedLotsForMaterial(powderName);
+
             // 첫 번째 LOT 입력에 포커스
             setTimeout(() => {
                 document.getElementById(`lotInput_${materialIndex}_${lotIndex}`).focus();
@@ -5911,6 +5924,104 @@ function t(key) {
 
             // 합계 업데이트
             updateTotalWeight(materialIndex);
+        }
+
+        // 합격 LOT 목록 로드 (캐싱)
+        async function loadApprovedLotsForMaterial(powderName) {
+            if (approvedLotsCache[powderName]) {
+                return; // 이미 로드됨
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/completed-lots?powder_name=${encodeURIComponent(powderName)}&category=incoming`);
+                const data = await response.json();
+
+                if (data.success && data.lots) {
+                    approvedLotsCache[powderName] = data.lots.map(lot => lot.lot_number);
+                } else {
+                    approvedLotsCache[powderName] = [];
+                }
+            } catch (error) {
+                console.error('합격 LOT 목록 로딩 실패:', error);
+                approvedLotsCache[powderName] = [];
+            }
+        }
+
+        // LOT 번호 검증
+        async function validateAutoInputLot(materialIndex, lotIndex, powderName) {
+            const lotInput = document.getElementById(`lotInput_${materialIndex}_${lotIndex}`);
+            const validationDiv = document.getElementById(`lotValidation_${materialIndex}_${lotIndex}`);
+
+            if (!lotInput || !validationDiv) return;
+
+            const lotNumber = lotInput.value.trim();
+
+            // 빈 값이면 검증 안 함
+            if (!lotNumber) {
+                validationDiv.innerHTML = '';
+                lotInput.style.borderColor = '#ddd';
+                return;
+            }
+
+            // 합격 LOT 목록 로드 (캐시 확인)
+            if (!approvedLotsCache[powderName]) {
+                validationDiv.innerHTML = '<span style="color: #999;">확인 중...</span>';
+                await loadApprovedLotsForMaterial(powderName);
+            }
+
+            // 검증
+            const approvedLots = approvedLotsCache[powderName] || [];
+            const isApproved = approvedLots.includes(lotNumber);
+
+            if (isApproved) {
+                // 합격 LOT
+                validationDiv.innerHTML = '<span style="color: #4CAF50;">✓ 합격</span>';
+                lotInput.style.borderColor = '#4CAF50';
+                lotInput.style.borderWidth = '2px';
+                lotInput.dataset.validated = 'true';
+            } else {
+                // 불합격 또는 미검사 LOT
+                validationDiv.innerHTML = '<span style="color: #f44336;">✗ 불가</span>';
+                lotInput.style.borderColor = '#f44336';
+                lotInput.style.borderWidth = '2px';
+                lotInput.dataset.validated = 'false';
+
+                // 경고 메시지
+                setTimeout(() => {
+                    alert(`⚠️ LOT 번호 검증 실패\n\n입력된 LOT: ${lotNumber}\n분말명: ${powderName}\n\n이 LOT는 수입검사 합격 목록에 없습니다.\n합격된 LOT만 사용할 수 있습니다.`);
+                    lotInput.focus();
+                    lotInput.select();
+                }, 100);
+            }
+
+            // 판정 버튼 활성화 상태 업데이트
+            updateJudgeButtonState(materialIndex);
+        }
+
+        // 판정 버튼 활성화 상태 업데이트
+        function updateJudgeButtonState(materialIndex) {
+            const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
+            const rows = tableBody.querySelectorAll('tr');
+            let allLotsValid = true;
+            let hasAnyLot = false;
+
+            rows.forEach(row => {
+                const lotInput = row.querySelector('[id^="lotInput_"]');
+                if (lotInput && lotInput.value.trim()) {
+                    hasAnyLot = true;
+                    if (lotInput.dataset.validated !== 'true') {
+                        allLotsValid = false;
+                    }
+                }
+            });
+
+            const judgeBtn = document.getElementById(`judgeBtn_${materialIndex}`);
+            if (judgeBtn) {
+                // 모든 LOT가 검증되고 중량이 입력되어야 판정 가능
+                const totalWeight = parseFloat(document.getElementById(`totalWeight_${materialIndex}`).textContent);
+                judgeBtn.disabled = !(allLotsValid && hasAnyLot && totalWeight > 0);
+                judgeBtn.style.opacity = judgeBtn.disabled ? '0.5' : '1';
+            }
         }
 
         // 합계 중량 업데이트
@@ -5938,17 +6049,8 @@ function t(key) {
                 totalWeightSpan.textContent = total.toFixed(2);
             }
 
-            // 판정 버튼 활성화 여부
-            const judgeBtn = document.getElementById(`judgeBtn_${materialIndex}`);
-            if (judgeBtn) {
-                if (hasAllWeights && total > 0) {
-                    judgeBtn.disabled = false;
-                    judgeBtn.style.opacity = '1';
-                } else {
-                    judgeBtn.disabled = true;
-                    judgeBtn.style.opacity = '0.5';
-                }
-            }
+            // 판정 버튼 활성화 여부 (LOT 검증 포함)
+            updateJudgeButtonState(materialIndex);
 
             // 판정 결과 초기화
             const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
@@ -5987,20 +6089,28 @@ function t(key) {
             const minWeight = parseFloat(materialRow.dataset.minWeight);
             const maxWeight = parseFloat(materialRow.dataset.maxWeight);
 
-            // 모든 LOT 번호가 입력되었는지 확인
+            // 모든 LOT 번호가 입력되고 검증되었는지 확인
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
             const rows = tableBody.querySelectorAll('tr');
             let allLotsHaveNumbers = true;
+            let allLotsValidated = true;
 
             rows.forEach(row => {
                 const lotInput = row.querySelector('[id^="lotInput_"]');
                 if (!lotInput || !lotInput.value.trim()) {
                     allLotsHaveNumbers = false;
+                } else if (lotInput.dataset.validated !== 'true') {
+                    allLotsValidated = false;
                 }
             });
 
             if (!allLotsHaveNumbers) {
                 alert('모든 LOT 번호를 입력해주세요.');
+                return;
+            }
+
+            if (!allLotsValidated) {
+                alert('⚠️ 검증 실패\n\n모든 LOT가 수입검사 합격 상태여야 합니다.\n불합격 LOT는 사용할 수 없습니다.');
                 return;
             }
 
@@ -6055,24 +6165,38 @@ function t(key) {
             const minWeight = parseFloat(materialRow.dataset.minWeight);
             const maxWeight = parseFloat(materialRow.dataset.maxWeight);
 
-            // LOT 정보 수집
+            // LOT 정보 수집 및 검증
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
             const rows = tableBody.querySelectorAll('tr');
             const lots = [];
             let totalWeight = 0;
+            let hasInvalidLot = false;
 
             rows.forEach(row => {
                 const lotInput = row.querySelector('[id^="lotInput_"]');
                 const weightInput = row.querySelector('[id^="weightInput_"]');
                 if (lotInput && weightInput && lotInput.value && weightInput.value) {
                     const weight = parseFloat(weightInput.value);
+
+                    // LOT 검증 확인
+                    if (lotInput.dataset.validated !== 'true') {
+                        hasInvalidLot = true;
+                    }
+
                     lots.push({
                         lotNumber: lotInput.value.trim(),
-                        weight: weight
+                        weight: weight,
+                        validated: lotInput.dataset.validated === 'true'
                     });
                     totalWeight += weight;
                 }
             });
+
+            // 불합격 LOT가 있으면 저장 불가
+            if (hasInvalidLot) {
+                alert('⚠️ 검증 실패\n\n수입검사 합격되지 않은 LOT가 포함되어 있습니다.\n합격된 LOT만 사용할 수 있습니다.');
+                return;
+            }
 
             if (lots.length === 0) {
                 alert('최소 1개의 LOT를 입력하세요.');
