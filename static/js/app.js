@@ -4901,7 +4901,7 @@ function t(key) {
                                     <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
                                         <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
                                         <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
-                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.round(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.round(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
+                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.floor(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.ceil(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
                                         </div>
                                     </div>
 
@@ -5145,7 +5145,7 @@ function t(key) {
                                     <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
                                         <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
                                         <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
-                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.round(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.round(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
+                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.floor(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.ceil(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
                                         </div>
                                     </div>
 
