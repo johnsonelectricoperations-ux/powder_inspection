@@ -4839,7 +4839,7 @@ function t(key) {
                 const minWeight = calculatedWeight * (1 - tolerance / 100);
                 const maxWeight = calculatedWeight * (1 + tolerance / 100);
 
-                const material = {
+                return {
                     index: index,
                     powderName: item.powder_name,
                     ratio: item.ratio,
@@ -4850,11 +4850,6 @@ function t(key) {
                     category: item.powder_category,
                     isMain: item.is_main == 1 || item.is_main === true
                 };
-
-                // 디버깅 정보
-                console.log(`[Recipe ${index}] ${item.powder_name}: category="${item.powder_category}", is_main=${item.is_main}, isMain=${material.isMain}`);
-
-                return material;
             });
 
             // 진행 상황 업데이트
@@ -5144,11 +5139,6 @@ function t(key) {
             const materialRow = document.getElementById(`materialRow_${materialIndex}`);
             const isMain = materialRow.dataset.isMain === 'true';
             const powderName = materialRow.dataset.powderName;
-
-            // 디버깅 정보
-            console.log(`[addLotRow] materialIndex=${materialIndex}, lotIndex=${lotIndex}`);
-            console.log(`[addLotRow] data-is-main="${materialRow.dataset.isMain}", isMain=${isMain}`);
-            console.log(`[addLotRow] powderName="${powderName}"`);
 
             // Main 분말은 선택 입력, 일반 분말은 숫자 입력
             let weightInputHtml = '';
