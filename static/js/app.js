@@ -4865,6 +4865,7 @@ function t(key) {
                     <div class="${rowClass}" id="materialRow_${idx}" data-index="${idx}"
                          data-min-weight="${material.minWeight}"
                          data-max-weight="${material.maxWeight}"
+                         data-tolerance="${material.tolerance}"
                          data-is-main="${material.isMain}"
                          data-powder-name="${material.powderName}">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -5026,6 +5027,7 @@ function t(key) {
                     <div class="${rowClass}" id="materialRow_${idx}" data-index="${idx}"
                          data-min-weight="${material.minWeight}"
                          data-max-weight="${material.maxWeight}"
+                         data-tolerance="${material.tolerance}"
                          data-is-main="${material.isMain}"
                          data-powder-name="${material.powderName}">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -5468,6 +5470,7 @@ function t(key) {
             const isMain = materialRow.dataset.isMain === 'true';
             const minWeight = parseFloat(materialRow.dataset.minWeight);
             const maxWeight = parseFloat(materialRow.dataset.maxWeight);
+            const tolerance = parseFloat(materialRow.dataset.tolerance) || 5;
 
             // LOT 정보 수집 및 검증
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
@@ -5509,8 +5512,8 @@ function t(key) {
 
             // 중량 판정 확인
             const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
-            if (!judgeResult || judgeResult.textContent !== 'OK') {
-                alert('중량 판정이 OK여야 저장할 수 있습니다.\n판정 버튼을 먼저 클릭하세요.');
+            if (!judgeResult || judgeResult.dataset.result !== 'pass') {
+                alert('중량 판정이 합격이어야 저장할 수 있습니다.\n판정 버튼을 먼저 클릭하세요.');
                 return;
             }
 
@@ -5527,7 +5530,7 @@ function t(key) {
                             material_lot: lot.lotNumber,
                             target_weight: (minWeight + maxWeight) / 2,
                             actual_weight: lot.weight,
-                            tolerance_percent: 5,
+                            tolerance_percent: tolerance,
                             operator: currentAutoInputWork.operator
                         })
                     });
