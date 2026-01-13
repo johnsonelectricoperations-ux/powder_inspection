@@ -4855,7 +4855,7 @@ function t(key) {
                                 </h4>
                                 <p style="margin: 0; color: #666; font-size: 0.9em;">
                                     비율: ${material.ratio}% |
-                                    목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
+                                    목표 중량: ${material.isMain ? parseFloat(material.calculatedWeight).toLocaleString() + ' kg' : Math.round(parseFloat(material.calculatedWeight) * 1000).toLocaleString() + ' g'} |
                                     허용오차: ±${material.tolerance}%
                                 </p>
                             </div>
@@ -4878,7 +4878,7 @@ function t(key) {
                                 <thead>
                                     <tr style="background: #e0e0e0;">
                                         <th style="padding: 10px; text-align: left; width: 40%;">📱 LOT 번호</th>
-                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (kg)</th>
+                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (${material.isMain ? 'kg' : 'g'})</th>
                                         <th style="padding: 10px; text-align: center; width: 20%;">작업</th>
                                     </tr>
                                 </thead>
@@ -4893,7 +4893,7 @@ function t(key) {
                                     <div style="text-align: center;">
                                         <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">합계 중량</div>
                                         <div style="font-size: 1.2em; font-weight: 700; color: #333;">
-                                            <span id="totalWeight_${idx}">0.00</span> kg
+                                            <span id="totalWeight_${idx}">0</span> ${material.isMain ? 'kg' : 'g'}
                                         </div>
                                     </div>
 
@@ -4901,7 +4901,7 @@ function t(key) {
                                     <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
                                         <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
                                         <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
-                                            ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
+                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.round(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.round(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
                                         </div>
                                     </div>
 
@@ -4989,8 +4989,9 @@ function t(key) {
                         tableBody.appendChild(row);
                     });
 
-                    // 합계 중량 표시
-                    document.getElementById(`totalWeight_${idx}`).textContent = completedData.weight.toFixed(2);
+                    // 합계 중량 표시 (Main은 kg, 첨가분말은 g)
+                    const displayWeight = material.isMain ? completedData.weight.toFixed(2) : Math.round(completedData.weight * 1000).toLocaleString();
+                    document.getElementById(`totalWeight_${idx}`).textContent = displayWeight;
 
                     // 판정 결과 표시
                     const judgeResult = document.getElementById(`judgeResult_${idx}`);
@@ -5098,7 +5099,7 @@ function t(key) {
                                 </h4>
                                 <p style="margin: 0; color: #666; font-size: 0.9em;">
                                     비율: ${material.ratio}% |
-                                    목표 중량: ${parseFloat(material.calculatedWeight).toLocaleString()} kg |
+                                    목표 중량: ${material.isMain ? parseFloat(material.calculatedWeight).toLocaleString() + ' kg' : Math.round(parseFloat(material.calculatedWeight) * 1000).toLocaleString() + ' g'} |
                                     허용오차: ±${material.tolerance}%
                                 </p>
                             </div>
@@ -5121,7 +5122,7 @@ function t(key) {
                                 <thead>
                                     <tr style="background: #e0e0e0;">
                                         <th style="padding: 10px; text-align: left; width: 40%;">📱 LOT 번호</th>
-                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (kg)</th>
+                                        <th style="padding: 10px; text-align: center; width: 40%;">⚖️ 계량 중량 (${material.isMain ? 'kg' : 'g'})</th>
                                         <th style="padding: 10px; text-align: center; width: 20%;">작업</th>
                                     </tr>
                                 </thead>
@@ -5136,7 +5137,7 @@ function t(key) {
                                     <div style="text-align: center;">
                                         <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">합계 중량</div>
                                         <div style="font-size: 1.2em; font-weight: 700; color: #333;">
-                                            <span id="totalWeight_${idx}">0.00</span> kg
+                                            <span id="totalWeight_${idx}">0</span> ${material.isMain ? 'kg' : 'g'}
                                         </div>
                                     </div>
 
@@ -5144,7 +5145,7 @@ function t(key) {
                                     <div style="padding: 10px 15px; background: #f0f7ff; border: 2px solid #2196F3; border-radius: 8px; text-align: center; min-width: 180px;">
                                         <div style="font-size: 0.75em; color: #666; margin-bottom: 5px;">허용 중량 범위</div>
                                         <div style="font-weight: 700; color: #2196F3; font-size: 1.1em; line-height: 1.3;">
-                                            ${parseFloat(material.minWeight).toFixed(2)} ~ ${parseFloat(material.maxWeight).toFixed(2)} kg
+                                            ${material.isMain ? parseFloat(material.minWeight).toFixed(2) + ' ~ ' + parseFloat(material.maxWeight).toFixed(2) + ' kg' : Math.round(parseFloat(material.minWeight) * 1000).toLocaleString() + ' ~ ' + Math.round(parseFloat(material.maxWeight) * 1000).toLocaleString() + ' g'}
                                         </div>
                                     </div>
 
@@ -5220,9 +5221,9 @@ function t(key) {
                     <input type="number"
                            id="weightInput_${materialIndex}_${lotIndex}"
                            class="auto-input-field weight-input"
-                           step="0.01"
+                           step="1"
                            style="width: 100%; padding: 8px;"
-                           placeholder="중량계 또는 수동입력"
+                           placeholder="중량 입력 (g)"
                            oninput="updateTotalWeight(${materialIndex})">
                 `;
             }
@@ -5393,6 +5394,8 @@ function t(key) {
         function updateTotalWeight(materialIndex) {
             const tableBody = document.getElementById(`lotTableBody_${materialIndex}`);
             const rows = tableBody.querySelectorAll('tr');
+            const materialRow = document.getElementById(`materialRow_${materialIndex}`);
+            const isMain = materialRow.dataset.isMain === 'true';
             let total = 0;
             let hasAllWeights = rows.length > 0;
 
@@ -5408,10 +5411,10 @@ function t(key) {
                 }
             });
 
-            // 합계 중량 표시
+            // 합계 중량 표시 (Main은 kg, 첨가분말은 g - 정수)
             const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
             if (totalWeightSpan) {
-                totalWeightSpan.textContent = total.toFixed(2);
+                totalWeightSpan.textContent = isMain ? total.toFixed(2) : Math.round(total).toLocaleString();
             }
 
             // 판정 버튼 활성화 여부 (LOT 검증 포함)
@@ -5449,8 +5452,14 @@ function t(key) {
             const judgeResult = document.getElementById(`judgeResult_${materialIndex}`);
             const completeBtn = document.getElementById(`completeMaterialBtn_${materialIndex}`);
             const totalWeightSpan = document.getElementById(`totalWeight_${materialIndex}`);
+            const isMain = materialRow.dataset.isMain === 'true';
 
-            const totalWeight = parseFloat(totalWeightSpan.textContent);
+            // 첨가분말은 g → kg 변환, Main은 그대로
+            let totalWeight = parseFloat(totalWeightSpan.textContent.replace(/,/g, ''));
+            if (!isMain) {
+                totalWeight = totalWeight / 1000; // g → kg
+            }
+
             const minWeight = parseFloat(materialRow.dataset.minWeight);
             const maxWeight = parseFloat(materialRow.dataset.maxWeight);
 
@@ -5542,7 +5551,12 @@ function t(key) {
                 const lotInput = row.querySelector('[id^="lotInput_"]');
                 const weightInput = row.querySelector('[id^="weightInput_"]');
                 if (lotInput && weightInput && lotInput.value && weightInput.value) {
-                    const weight = parseFloat(weightInput.value);
+                    let weight = parseFloat(weightInput.value);
+
+                    // 첨가분말은 g → kg 변환
+                    if (!isMain) {
+                        weight = weight / 1000;
+                    }
 
                     // LOT 검증 확인
                     if (lotInput.dataset.validated !== 'true') {
@@ -5589,7 +5603,7 @@ function t(key) {
                         powder_category: isMain ? 'main' : 'sub',
                         material_lot: lotNumbers,
                         target_weight: (minWeight + maxWeight) / 2,
-                        actual_weight: totalWeight,
+                        actual_weight: parseFloat(totalWeight.toFixed(3)), // 소수점 3자리
                         tolerance_percent: tolerance,
                         operator: currentAutoInputWork.operator
                     })
