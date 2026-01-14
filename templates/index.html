@@ -388,21 +388,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- 라벨 패널: 완료 후 표시되며 인쇄 버튼을 제공 -->
-                <div id="labelPanel" class="label-panel print-area" aria-hidden="true">
-                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
-                        <strong data-i18n="labelPanelTitle">바코드 라벨</strong>
-                        <div>
-                            <button class="btn" onclick="printAllLabels()" style="margin-right:6px;" data-i18n="printAll">모두 인쇄</button>
-                            <button class="btn secondary" onclick="hideLabelPanel()" data-i18n="close">닫기</button>
-                        </div>
-                    </div>
-                    <div id="labelList" style="display:flex; gap:8px; flex-wrap:wrap; align-content:flex-start; justify-content:center;
-                        width:100%; height: calc(100mm - 36px); overflow:auto; padding:6px; background:#fafafa; border-radius:4px;">
-                        <!-- 개별 라벨이 여기에 렌더링 됩니다 -->
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -953,6 +938,20 @@
         </div>
     </div> <!-- end main-content -->
 
+    <!-- 라벨 패널: 완료 후 표시되며 인쇄 버튼을 제공 (모든 페이지에서 접근 가능) -->
+    <div id="labelPanel" class="label-panel print-area" aria-hidden="true" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
+            <strong data-i18n="labelPanelTitle">바코드 라벨</strong>
+            <div>
+                <button class="btn" onclick="printAllLabels()" style="margin-right:6px;" data-i18n="printAll">모두 인쇄</button>
+                <button class="btn secondary" onclick="hideLabelPanel()" data-i18n="close">닫기</button>
+            </div>
+        </div>
+        <div id="labelList" style="display:flex; gap:8px; flex-wrap:wrap; align-content:flex-start; justify-content:center;
+            width:100%; height: calc(100mm - 36px); overflow:auto; padding:6px; background:#fafafa; border-radius:4px;">
+            <!-- 개별 라벨이 여기에 렌더링 됩니다 -->
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
