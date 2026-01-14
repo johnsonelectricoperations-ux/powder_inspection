@@ -4822,8 +4822,8 @@ function t(key) {
                     powderName: item.powder_name,
                     ratio: item.ratio,
                     calculatedWeight: calculatedWeight.toFixed(2),
-                    minWeight: minWeight.toFixed(2),
-                    maxWeight: maxWeight.toFixed(2),
+                    minWeight: minWeight,  // 정밀도 유지를 위해 toFixed 제거
+                    maxWeight: maxWeight,  // 정밀도 유지를 위해 toFixed 제거
                     tolerance: tolerance,
                     category: item.powder_category,
                     isMain: item.is_main == 1 || item.is_main === true
@@ -5066,8 +5066,8 @@ function t(key) {
                     powderName: item.powder_name,
                     ratio: item.ratio,
                     calculatedWeight: calculatedWeight.toFixed(2),
-                    minWeight: minWeight.toFixed(2),
-                    maxWeight: maxWeight.toFixed(2),
+                    minWeight: minWeight,  // 정밀도 유지를 위해 toFixed 제거
+                    maxWeight: maxWeight,  // 정밀도 유지를 위해 toFixed 제거
                     tolerance: tolerance,
                     category: item.powder_category,
                     isMain: item.powder_category === 'main'
