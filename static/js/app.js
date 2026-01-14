@@ -184,6 +184,7 @@ function t(key) {
                 if (resultsDiv) {
                     resultsDiv.innerHTML = '';
                 }
+                loadTraceabilityPowderList();
             }
         }
 
@@ -3823,6 +3824,60 @@ function t(key) {
         // ============================================
         // 추적성 조회 (Traceability)
         // ============================================
+
+        // 추적성 조회용 제품명 목록 로드
+        async function loadTraceabilityPowderList() {
+            try {
+                const selectEl = document.getElementById('traceabilityPowderName');
+                if (!selectEl) return;
+
+                // 기본 옵션만 남기고 초기화
+                selectEl.innerHTML = '<option value="">선택 안함 (배합 LOT만 검색)</option>';
+
+                // 1. 수입분말 목록 가져오기
+                const powderResponse = await fetch(`${API_BASE}/api/powders`);
+                const powderData = await powderResponse.json();
+
+                if (powderData.success && powderData.powders) {
+                    const incomingGroup = document.createElement('optgroup');
+                    incomingGroup.label = '수입검사분말';
+
+                    powderData.powders.forEach(powder => {
+                        const option = document.createElement('option');
+                        option.value = powder.powder_name;
+                        option.textContent = powder.powder_name;
+                        incomingGroup.appendChild(option);
+                    });
+
+                    if (incomingGroup.children.length > 0) {
+                        selectEl.appendChild(incomingGroup);
+                    }
+                }
+
+                // 2. 배합분말(제품) 목록 가져오기
+                const productResponse = await fetch(`${API_BASE}/api/blending/products`);
+                const productData = await productResponse.json();
+
+                if (productData.success && productData.products) {
+                    const blendingGroup = document.createElement('optgroup');
+                    blendingGroup.label = '배합분말';
+
+                    productData.products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.product_name;
+                        option.textContent = product.product_name;
+                        blendingGroup.appendChild(option);
+                    });
+
+                    if (blendingGroup.children.length > 0) {
+                        selectEl.appendChild(blendingGroup);
+                    }
+                }
+
+            } catch (error) {
+                console.error('제품명 목록 로드 실패:', error);
+            }
+        }
 
         const traceabilityFormElement = document.getElementById('traceabilityForm');
 
