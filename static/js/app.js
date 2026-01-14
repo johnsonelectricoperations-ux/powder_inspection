@@ -1079,23 +1079,81 @@ function t(key) {
         // ============================================
         // 검사 결과 조회
         // ============================================
-        async function loadPowderListForSearch() {
+        async function loadPowderListForSearch(category = '') {
             try {
-                const response = await fetch(`${API_BASE}/api/powder-list`);
-                const data = await response.json();
-
                 const select = document.getElementById('searchPowderName');
                 select.innerHTML = '<option value="">전체</option>';
 
-                if (data.success) {
-                    data.data.forEach(powder => {
-                        const option = document.createElement('option');
-                        option.value = powder;
-                        option.textContent = powder;
-                        select.appendChild(option);
-                    });
+                // 검사구분에 따라 다른 API 호출
+                if (category === 'incoming') {
+                    // 수입검사 -> 수입분말만
+                    const response = await fetch(`${API_BASE}/api/powders`);
+                    const data = await response.json();
+
+                    if (data.success && data.powders) {
+                        data.powders.forEach(powder => {
+                            const option = document.createElement('option');
+                            option.value = powder.powder_name;
+                            option.textContent = powder.powder_name;
+                            select.appendChild(option);
+                        });
+                    }
+                } else if (category === 'mixing') {
+                    // 배합검사 -> 배합분말(제품)만
+                    const response = await fetch(`${API_BASE}/api/blending/products`);
+                    const data = await response.json();
+
+                    if (data.success && data.products) {
+                        data.products.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product.product_name;
+                            option.textContent = product.product_name;
+                            select.appendChild(option);
+                        });
+                    }
+                } else {
+                    // 전체 -> 수입분말 + 배합분말 모두
+                    // 1. 수입분말
+                    const powderResponse = await fetch(`${API_BASE}/api/powders`);
+                    const powderData = await powderResponse.json();
+
+                    if (powderData.success && powderData.powders) {
+                        const incomingGroup = document.createElement('optgroup');
+                        incomingGroup.label = '수입검사분말';
+
+                        powderData.powders.forEach(powder => {
+                            const option = document.createElement('option');
+                            option.value = powder.powder_name;
+                            option.textContent = powder.powder_name;
+                            incomingGroup.appendChild(option);
+                        });
+
+                        if (incomingGroup.children.length > 0) {
+                            select.appendChild(incomingGroup);
+                        }
+                    }
+
+                    // 2. 배합분말
+                    const productResponse = await fetch(`${API_BASE}/api/blending/products`);
+                    const productData = await productResponse.json();
+
+                    if (productData.success && productData.products) {
+                        const blendingGroup = document.createElement('optgroup');
+                        blendingGroup.label = '배합분말';
+
+                        productData.products.forEach(product => {
+                            const option = document.createElement('option');
+                            option.value = product.product_name;
+                            option.textContent = product.product_name;
+                            blendingGroup.appendChild(option);
+                        });
+
+                        if (blendingGroup.children.length > 0) {
+                            select.appendChild(blendingGroup);
+                        }
+                    }
                 }
-                
+
                 // 검색 날짜 기본값 설정 (오늘 날짜)
                 const today = new Date().toISOString().split('T')[0];
                 const searchDateFromInput = document.getElementById('searchDateFrom');
@@ -1111,12 +1169,18 @@ function t(key) {
             }
         }
 
+        // 검사구분 변경 시 분말명 목록 필터링
+        const searchCategoryElement = document.getElementById('searchCategory');
+        if (searchCategoryElement) {
+            searchCategoryElement.addEventListener('change', (e) => {
+                const category = e.target.value;
+                loadPowderListForSearch(category);
+            });
+        }
+
         const searchFormElement = document.getElementById('searchForm');
 
-
         if (searchFormElement) {
-
-
             searchFormElement.addEventListener('submit', async (e) => {
             e.preventDefault();
 
