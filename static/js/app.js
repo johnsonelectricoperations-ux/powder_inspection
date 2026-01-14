@@ -3588,7 +3588,7 @@ function t(key) {
                 if (!tbody) return;
 
                 if (!data.success || !data.works || data.works.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-message">배합작업 내역이 없습니다.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="empty-message">배합작업 내역이 없습니다.</td></tr>';
                     return;
                 }
 
@@ -3627,6 +3627,14 @@ function t(key) {
                                     </div>`
                                 }
                             </td>
+                            <td style="text-align: center;">
+                                ${work.status === 'completed' ?
+                                    `<button class="btn" onclick="printBlendingBarcode('${work.product_name}', '${work.batch_lot}')" style="padding: 8px 16px; font-size: 1.2em; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;" title="바코드 출력">
+                                        📊
+                                    </button>` :
+                                    '-'
+                                }
+                            </td>
                         </tr>
                     `;
                 }).join('');
@@ -3634,7 +3642,7 @@ function t(key) {
             } catch (error) {
                 console.error('배합작업 목록 로딩 실패:', error);
                 document.getElementById('blendingWorksTableBody').innerHTML =
-                    '<tr><td colspan="8" class="empty-message">오류 발생: ' + error.message + '</td></tr>';
+                    '<tr><td colspan="9" class="empty-message">오류 발생: ' + error.message + '</td></tr>';
             }
         }
 
@@ -3695,6 +3703,128 @@ function t(key) {
                 return;
             }
             loadAutoInputPage(workId, 'blending');
+        }
+
+        function printBlendingBarcode(productName, batchLot) {
+            // 배합 LOT 바코드 출력 모달 표시
+            const barcodeValue = `PN:${productName}|LOT:${batchLot}`;
+
+            // 모달 HTML 생성
+            const modalHtml = `
+                <div id="barcodeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 600px; width: 90%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0;">배합 LOT 바코드</h3>
+                            <button onclick="closeBarcodeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+                        </div>
+
+                        <div style="border: 2px solid #ddd; border-radius: 8px; padding: 20px; background: white; text-align: center;">
+                            <div style="margin-bottom: 15px;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">제품명</div>
+                                <div style="font-size: 1.2em; font-weight: bold;">${productName}</div>
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">배합 LOT</div>
+                                <div style="font-size: 1.2em; font-weight: bold;">${batchLot}</div>
+                            </div>
+                            <svg id="modalBarcode" style="width: 100%; height: 100px; display: block;"></svg>
+                        </div>
+
+                        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="closeBarcodeModal()" class="btn secondary" style="padding: 10px 20px;">취소</button>
+                            <button onclick="printBarcodeContent()" class="btn" style="padding: 10px 20px; background: #4CAF50; color: white;">🖨️ 인쇄</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 모달을 body에 추가
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // 바코드 생성
+            setTimeout(() => {
+                const svgEl = document.getElementById('modalBarcode');
+                if (svgEl && typeof JsBarcode === 'function') {
+                    try {
+                        JsBarcode(svgEl, barcodeValue, {
+                            format: "CODE128",
+                            width: 2,
+                            height: 80,
+                            displayValue: true,
+                            fontSize: 14,
+                            margin: 10
+                        });
+                    } catch (err) {
+                        console.error('바코드 생성 오류:', err);
+                        svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="12">${barcodeValue}</text>`;
+                    }
+                } else {
+                    console.error('JsBarcode 라이브러리를 찾을 수 없습니다.');
+                }
+            }, 100);
+        }
+
+        function closeBarcodeModal() {
+            const modal = document.getElementById('barcodeModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function printBarcodeContent() {
+            // 인쇄할 내용만 추출
+            const modal = document.getElementById('barcodeModal');
+            const printContent = modal.querySelector('[style*="border: 2px solid"]').outerHTML;
+
+            // 새 창에서 인쇄
+            const printWindow = window.open('', '_blank', 'width=600,height=400');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>바코드 인쇄</title>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+                    <style>
+                        body {
+                            margin: 20px;
+                            font-family: Arial, sans-serif;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+                        @media print {
+                            body { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            const svgEl = document.querySelector('svg');
+                            if (svgEl && typeof JsBarcode === 'function') {
+                                const barcodeValue = svgEl.id.replace('modalBarcode', '');
+                                const textEls = document.querySelectorAll('[style*="font-weight: bold"]');
+                                const batchLot = textEls[textEls.length - 1].textContent;
+                                const product = textEls[textEls.length - 2].textContent;
+                                const value = \`PN:\${product}|LOT:\${batchLot}\`;
+                                JsBarcode(svgEl, value, {
+                                    format: "CODE128",
+                                    width: 2,
+                                    height: 80,
+                                    displayValue: true,
+                                    fontSize: 14,
+                                    margin: 10
+                                });
+                                setTimeout(() => { window.print(); }, 500);
+                            }
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
 
         // ============================================
