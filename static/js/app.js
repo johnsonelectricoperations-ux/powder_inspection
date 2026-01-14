@@ -6,6 +6,7 @@ const API_BASE = '';
 // 현재 검사 데이터
 let currentInspection = null;
 let currentItems = [];
+let currentSavedValues = {}; // 저장된 측정값
 // 임시 판정 결과 저장
 let pendingResults = {};
 
@@ -524,6 +525,7 @@ function t(key) {
                 if (data.success) {
                     currentInspection = data.data;
                     currentItems = data.items;
+                    currentSavedValues = data.savedValues || {}; // 저장된 측정값
                     showInspectionPage();
                 } else {
                     alert('검사 로딩 실패: ' + data.message);
@@ -670,19 +672,33 @@ function t(key) {
 
         function renderItemInputs(item) {
             const container = document.getElementById(`item-${item.name}`);
+            const savedValue = currentSavedValues[item.name] || {}; // 저장된 값 가져오기
 
             if (item.isParticleSize) {
                 // 입도분석
                 let html = '<h4 style="margin-bottom: 15px; color: #667eea;">📊 입도분석 측정</h4>';
                 html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">';
                 item.particleSpecs.forEach((spec, index) => {
+                    // 저장된 값이 있으면 파싱 (JSON 형식으로 저장되어 있을 수 있음)
+                    let val1 = '', val2 = '';
+                    if (savedValue.value1) {
+                        try {
+                            const parsed = JSON.parse(savedValue.value1);
+                            if (parsed[index]) {
+                                val1 = parsed[index][0] || '';
+                                val2 = parsed[index][1] || '';
+                            }
+                        } catch (e) {
+                            // 파싱 실패시 무시
+                        }
+                    }
                     html += `
                         <div style="padding: 15px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                             <div style="font-weight: 600; margin-bottom: 8px; color: #2c3e50;">${spec.mesh_size}</div>
                             <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">규격: ${spec.min_value}~${spec.max_value}%</div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <input type="number" step="0.1" placeholder="1차" id="${item.name}_${index}_1" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-                                <input type="number" step="0.1" placeholder="2차" id="${item.name}_${index}_2" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="number" step="0.1" placeholder="1차" id="${item.name}_${index}_1" value="${val1}" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="number" step="0.1" placeholder="2차" id="${item.name}_${index}_2" value="${val2}" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
                             </div>
                         </div>
                     `;
@@ -708,16 +724,27 @@ function t(key) {
 
                 let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0;">';
                 for (let i = 1; i <= 3; i++) {
+                    // 저장된 값 가져오기
+                    let val1 = '', val2 = '';
+                    if (savedValue[`value${i}`]) {
+                        try {
+                            const parsed = JSON.parse(savedValue[`value${i}`]);
+                            val1 = parsed[0] || '';
+                            val2 = parsed[1] || '';
+                        } catch (e) {
+                            // 파싱 실패시 무시
+                        }
+                    }
                     html += `
                         <div style="padding: 15px; background: #f9f9f9; border-radius: 8px; border: 2px solid #e0e0e0;">
                             <div style="font-weight: 600; margin-bottom: 10px; text-align: center; color: #667eea;">${i}차 측정</div>
                             <div style="margin-bottom: 8px;">
                                 <label style="font-size: 0.85em; color: #666;">${label1} (g)</label>
-                                <input type="number" step="0.01" placeholder="${label1}" id="${item.name}_${label1}_${i}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-top: 4px;">
+                                <input type="number" step="0.01" placeholder="${label1}" id="${item.name}_${label1}_${i}" value="${val1}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-top: 4px;">
                             </div>
                             <div>
                                 <label style="font-size: 0.85em; color: #666;">${label2} (g)</label>
-                                <input type="number" step="0.01" placeholder="${label2}" id="${item.name}_${label2}_${i}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-top: 4px;">
+                                <input type="number" step="0.01" placeholder="${label2}" id="${item.name}_${label2}_${i}" value="${val2}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-top: 4px;">
                             </div>
                         </div>
                     `;
@@ -731,10 +758,12 @@ function t(key) {
                 // 일반 항목
                 let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0;">';
                 for (let i = 1; i <= 3; i++) {
+                    // 저장된 값 가져오기
+                    const val = savedValue[`value${i}`] || '';
                     html += `
                         <div style="text-align: center;">
                             <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #667eea;">${i}차 측정</label>
-                            <input type="number" step="0.01" placeholder="값 입력" id="${item.name}_${i}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1.1em; text-align: center;">
+                            <input type="number" step="0.01" placeholder="값 입력" id="${item.name}_${i}" value="${val}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1.1em; text-align: center;">
                         </div>
                     `;
                 }

@@ -308,6 +308,24 @@ def _do_start_inspection():
             # 기존 진행중 검사가 있음
             progress_data = dict_from_row(progress_row)
             items = get_inspection_items(powder_name, progress_data['inspection_type'], conn)
+
+            # 이미 저장된 측정값들을 가져오기
+            saved_values = {}
+            cursor.execute('''
+                SELECT item_name, value1, value2, value3, final_result
+                FROM inspection_result
+                WHERE powder_name = ? AND lot_number = ?
+            ''', (powder_name, lot_number))
+
+            for row in cursor.fetchall():
+                result_row = dict_from_row(row)
+                saved_values[result_row['item_name']] = {
+                    'value1': result_row['value1'],
+                    'value2': result_row['value2'],
+                    'value3': result_row['value3'],
+                    'final_result': result_row['final_result']
+                }
+
             return jsonify({
                 'success': True,
                 'isExisting': True,
@@ -323,7 +341,8 @@ def _do_start_inspection():
                     'category': progress_data.get('category', 'incoming'),
                     'inspectionDate': progress_data.get('inspection_date')
                 },
-                'items': items
+                'items': items,
+                'savedValues': saved_values  # 저장된 측정값 추가
             })
 
         # 2. 완료된 검사 확인
