@@ -3400,9 +3400,8 @@ function t(key) {
                 labelDiv.innerHTML = infoHtml;
                 list.appendChild(labelDiv);
 
-                // 바코드 내용: 영문/숫자만 사용 (CODE128은 한글 미지원)
-                // 분말명(영문), LOT 번호, Pack 정보를 모두 포함
-                const barcodeValue = `PN:${product}|LOT:${batchLot}|${i}/${totalPacks}`;
+                // 바코드 내용: 제품명-배합LOT번호 (간결한 형식)
+                const barcodeValue = `${product}-${batchLot}`;
 
                 // render barcode into svg (DOM 렌더링 후 실행)
                 setTimeout(() => {
