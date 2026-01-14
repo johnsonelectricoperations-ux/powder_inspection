@@ -2204,8 +2204,8 @@ def start_blending_work():
 def generate_batch_lot():
     """배합 LOT 번호 자동 생성"""
     try:
-        # YYYYMMDD-XXX 형식 (KST 기준 날짜)
-        today = datetime.now(ZoneInfo('Asia/Seoul')).strftime('%Y%m%d')
+        # YYMMDD-XXX 형식 (KST 기준 날짜, 년도 2자리)
+        today = datetime.now(ZoneInfo('Asia/Seoul')).strftime('%y%m%d')
         prefix = f'{today}-'
 
         with closing(get_db()) as conn:
