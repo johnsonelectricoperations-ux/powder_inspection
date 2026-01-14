@@ -3706,31 +3706,42 @@ function t(key) {
         }
 
         function printBlendingBarcode(productName, batchLot) {
-            // 배합 LOT 바코드 출력 모달 표시
+            // 배합 LOT 바코드 출력 모달 표시 (기존 라벨 형태와 동일)
             const barcodeValue = `PN:${productName}|LOT:${batchLot}`;
+            const company = 'Johnson Electric Operations';
+            const dateStr = new Date().toLocaleString('ko-KR');
 
-            // 모달 HTML 생성
+            // 모달 HTML 생성 (100mm x 100mm 라벨 형태)
             const modalHtml = `
                 <div id="barcodeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;">
-                    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 600px; width: 90%;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h3 style="margin: 0;">배합 LOT 바코드</h3>
                             <button onclick="closeBarcodeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
                         </div>
 
-                        <div style="border: 2px solid #ddd; border-radius: 8px; padding: 20px; background: white; text-align: center;">
-                            <div style="margin-bottom: 15px;">
-                                <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">제품명</div>
-                                <div style="font-size: 1.2em; font-weight: bold;">${productName}</div>
+                        <div id="barcodeLabel" style="width: 100mm; height: 100mm; box-sizing: border-box; background: white; border: 2px solid #000; display: flex; flex-direction: column; justify-content: space-between; padding: 6px; border-radius: 4px; position: relative;">
+                            <div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between;">
+                                <!-- 상단: 회사명 (왼쪽 상단) 및 날짜(오른쪽 상단) -->
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+                                    <div style="font-weight:700; font-size:12px; text-align:left;">${company}</div>
+                                    <div style="font-size:11px; color:#222; text-align:right;">작업날짜: ${dateStr}</div>
+                                </div>
+
+                                <!-- 중앙: 분말명 (크게) -->
+                                <div style="display:flex; align-items:center; justify-content:center; width:100%; flex:1;">
+                                    <div style="font-weight:800; font-size:36px; text-align:center; line-height:1;">${productName}</div>
+                                </div>
+
+                                <!-- 하단: 바코드, LOT -->
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
+                                    <svg id="modalBarcode" style="width:100%; height:72px; display:block;"></svg>
+                                    <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
+                                </div>
                             </div>
-                            <div style="margin-bottom: 20px;">
-                                <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">배합 LOT</div>
-                                <div style="font-size: 1.2em; font-weight: bold;">${batchLot}</div>
-                            </div>
-                            <svg id="modalBarcode" style="width: 100%; height: 100px; display: block;"></svg>
                         </div>
 
-                        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
                             <button onclick="closeBarcodeModal()" class="btn secondary" style="padding: 10px 20px;">취소</button>
                             <button onclick="printBarcodeContent()" class="btn" style="padding: 10px 20px; background: #4CAF50; color: white;">🖨️ 인쇄</button>
                         </div>
@@ -3741,22 +3752,24 @@ function t(key) {
             // 모달을 body에 추가
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-            // 바코드 생성
+            // 바코드 생성 (기존 라벨과 동일한 설정)
             setTimeout(() => {
                 const svgEl = document.getElementById('modalBarcode');
                 if (svgEl && typeof JsBarcode === 'function') {
                     try {
                         JsBarcode(svgEl, barcodeValue, {
-                            format: "CODE128",
+                            format: 'CODE128',
                             width: 2,
-                            height: 80,
+                            height: 60,
                             displayValue: true,
                             fontSize: 14,
-                            margin: 10
+                            margin: 2,
+                            marginTop: 5,
+                            marginBottom: 5
                         });
                     } catch (err) {
                         console.error('바코드 생성 오류:', err);
-                        svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="12">${barcodeValue}</text>`;
+                        svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="10">${barcodeValue}</text>`;
                     }
                 } else {
                     console.error('JsBarcode 라이브러리를 찾을 수 없습니다.');
@@ -3772,59 +3785,58 @@ function t(key) {
         }
 
         function printBarcodeContent() {
-            // 인쇄할 내용만 추출
-            const modal = document.getElementById('barcodeModal');
-            const printContent = modal.querySelector('[style*="border: 2px solid"]').outerHTML;
+            // 라벨 인쇄: 라벨 DOM을 복사하여 새 창에서 인쇄 (기존 printLabel과 동일 방식)
+            const labelEl = document.getElementById('barcodeLabel');
+            if (!labelEl) return alert('라벨을 찾을 수 없습니다.');
 
-            // 새 창에서 인쇄
-            const printWindow = window.open('', '_blank', 'width=600,height=400');
-            printWindow.document.write(`
-                <!DOCTYPE html>
+            const content = labelEl.innerHTML;
+            const w = window.open('', '_blank');
+            if (!w) return alert('팝업 차단을 확인하세요.');
+
+            const html = `
                 <html>
                 <head>
-                    <title>바코드 인쇄</title>
+                    <meta charset="utf-8">
+                    <title>라벨 인쇄</title>
                     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <style>
-                        body {
-                            margin: 20px;
-                            font-family: Arial, sans-serif;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            min-height: 100vh;
-                        }
-                        @media print {
-                            body { margin: 0; }
-                        }
+                        body { margin:0; padding:0; }
+                        .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
                     </style>
                 </head>
                 <body>
-                    ${printContent}
+                    <div class="label">${content}</div>
                     <script>
                         window.onload = function() {
-                            const svgEl = document.querySelector('svg');
+                            // 바코드 재렌더링
+                            const svgEl = document.querySelector('svg[id^="modalBarcode"]');
                             if (svgEl && typeof JsBarcode === 'function') {
-                                const barcodeValue = svgEl.id.replace('modalBarcode', '');
-                                const textEls = document.querySelectorAll('[style*="font-weight: bold"]');
-                                const batchLot = textEls[textEls.length - 1].textContent;
-                                const product = textEls[textEls.length - 2].textContent;
-                                const value = \`PN:\${product}|LOT:\${batchLot}\`;
-                                JsBarcode(svgEl, value, {
-                                    format: "CODE128",
-                                    width: 2,
-                                    height: 80,
-                                    displayValue: true,
-                                    fontSize: 14,
-                                    margin: 10
-                                });
-                                setTimeout(() => { window.print(); }, 500);
+                                // SVG에서 원래 바코드 값 추출 (text 요소에서)
+                                const textEl = svgEl.querySelector('text');
+                                if (textEl && textEl.textContent) {
+                                    const barcodeValue = textEl.textContent;
+                                    JsBarcode(svgEl, barcodeValue, {
+                                        format: 'CODE128',
+                                        width: 2,
+                                        height: 60,
+                                        displayValue: true,
+                                        fontSize: 14,
+                                        margin: 2,
+                                        marginTop: 5,
+                                        marginBottom: 5
+                                    });
+                                }
                             }
+                            setTimeout(function(){ window.print(); window.close(); }, 500);
                         };
                     <\/script>
                 </body>
                 </html>
-            `);
-            printWindow.document.close();
+            `;
+
+            w.document.open();
+            w.document.write(html);
+            w.document.close();
         }
 
         // ============================================
