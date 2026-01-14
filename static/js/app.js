@@ -3719,55 +3719,72 @@ function t(key) {
 
                 const work = data.work;
 
-                // 기존 renderLabelPanel 함수로 라벨 생성
-                renderLabelPanel(work);
-
-                // 라벨 패널을 모달 형태로 표시
-                const panel = document.getElementById('labelPanel');
-                if (panel) {
-                    // 모달 배경 추가
-                    const modalBackdrop = document.createElement('div');
-                    modalBackdrop.id = 'barcodeModalBackdrop';
-                    modalBackdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;';
-
-                    // 닫기 버튼 추가
-                    modalBackdrop.onclick = function(e) {
-                        if (e.target === modalBackdrop) {
-                            closeBarcodeModalFromLog();
-                        }
-                    };
-
-                    // 패널을 모달 안에 넣기
-                    document.body.appendChild(modalBackdrop);
-
-                    // 패널 스타일 조정
-                    panel.style.position = 'fixed';
-                    panel.style.top = '50%';
-                    panel.style.left = '50%';
-                    panel.style.transform = 'translate(-50%, -50%)';
-                    panel.style.zIndex = '10000';
-                    panel.style.maxHeight = '90vh';
-                    panel.style.overflowY = 'auto';
-                    panel.style.display = 'block';
-                    panel.setAttribute('aria-hidden', 'false');
-
-                    // 닫기 버튼이 없으면 추가
-                    if (!panel.querySelector('.modal-close-btn')) {
-                        const closeBtn = document.createElement('button');
-                        closeBtn.className = 'modal-close-btn';
-                        closeBtn.innerHTML = '&times;';
-                        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666; z-index: 10001;';
-                        closeBtn.onclick = closeBarcodeModalFromLog;
-                        panel.insertBefore(closeBtn, panel.firstChild);
-                    }
-                }
+                // 공통 모달 함수 호출
+                showBarcodeModal(work);
             } catch (error) {
                 console.error('바코드 조회 실패:', error);
                 alert('바코드를 불러오는 중 오류가 발생했습니다: ' + error.message);
             }
         }
 
-        function closeBarcodeModalFromLog() {
+        function showBarcodeModal(work) {
+            // 바코드를 모달 형태로 가운데 표시 (원재료 투입 완료 & 배합작업조회 공통 사용)
+            if (!work) {
+                alert('작업 정보가 없습니다.');
+                return;
+            }
+
+            // 기존 renderLabelPanel 함수로 라벨 생성
+            renderLabelPanel(work);
+
+            // 라벨 패널을 모달 형태로 표시
+            const panel = document.getElementById('labelPanel');
+            if (panel) {
+                // 모달 배경 추가
+                const modalBackdrop = document.createElement('div');
+                modalBackdrop.id = 'barcodeModalBackdrop';
+                modalBackdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;';
+
+                // 닫기 버튼 추가 (배경 클릭 시)
+                modalBackdrop.onclick = function(e) {
+                    if (e.target === modalBackdrop) {
+                        closeBarcodeModal();
+                    }
+                };
+
+                // 패널을 모달 안에 넣기
+                document.body.appendChild(modalBackdrop);
+
+                // 패널 스타일 조정 - 크기 키우기
+                panel.style.position = 'fixed';
+                panel.style.top = '50%';
+                panel.style.left = '50%';
+                panel.style.transform = 'translate(-50%, -50%)';
+                panel.style.zIndex = '10000';
+                panel.style.width = '90vw'; // 화면의 90% 너비
+                panel.style.maxWidth = '1400px'; // 최대 1400px
+                panel.style.maxHeight = '90vh'; // 화면의 90% 높이
+                panel.style.overflowY = 'auto';
+                panel.style.display = 'block';
+                panel.style.background = 'white';
+                panel.style.padding = '20px';
+                panel.style.borderRadius = '10px';
+                panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+                panel.setAttribute('aria-hidden', 'false');
+
+                // 닫기 버튼이 없으면 추가
+                if (!panel.querySelector('.modal-close-btn')) {
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'modal-close-btn';
+                    closeBtn.innerHTML = '&times;';
+                    closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 32px; cursor: pointer; color: #666; z-index: 10001; width: 40px; height: 40px;';
+                    closeBtn.onclick = closeBarcodeModal;
+                    panel.insertBefore(closeBtn, panel.firstChild);
+                }
+            }
+        }
+
+        function closeBarcodeModal() {
             // 모달 배경 제거
             const backdrop = document.getElementById('barcodeModalBackdrop');
             if (backdrop) {
@@ -3782,8 +3799,14 @@ function t(key) {
                 panel.style.left = '';
                 panel.style.transform = '';
                 panel.style.zIndex = '';
+                panel.style.width = '';
+                panel.style.maxWidth = '';
                 panel.style.maxHeight = '';
                 panel.style.overflowY = '';
+                panel.style.background = '';
+                panel.style.padding = '';
+                panel.style.borderRadius = '';
+                panel.style.boxShadow = '';
                 panel.style.display = 'none';
                 panel.setAttribute('aria-hidden', 'true');
 
@@ -5754,7 +5777,7 @@ function t(key) {
 
                 const data = await response.json();
                 if (data.success) {
-                    alert('✓ 모든 원재료 투입이 완료되었습니다.\n배합작업이 완료되었습니다.\n우측 라벨을 확인해 주세요.');
+                    alert('✓ 모든 원재료 투입이 완료되었습니다.\n배합작업이 완료되었습니다.\n바코드 라벨을 확인해 주세요.');
 
                     // 목록 갱신
                     try {
@@ -5775,8 +5798,8 @@ function t(key) {
                         console.warn('작업정보 재조회 실패:', err);
                     }
 
-                    // 라벨 생성 및 표시
-                    renderLabelPanel(currentAutoInputWork);
+                    // 라벨 생성 및 모달로 표시
+                    showBarcodeModal(currentAutoInputWork);
 
                     // 페이지는 유지하여 라벨 확인/인쇄 가능하도록 함
                 } else {
