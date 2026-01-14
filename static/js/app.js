@@ -3400,8 +3400,11 @@ function t(key) {
                 labelDiv.innerHTML = infoHtml;
                 list.appendChild(labelDiv);
 
-                // 바코드 내용: 제품명-배합LOT번호 (간결한 형식)
-                const barcodeValue = `${product}-${batchLot}`;
+                // 바코드 생성: 숫자만 사용 (제품명 숫자 + LOT 숫자)
+                // 예: JEO.06.36 + 260115-001 → 0636260115001
+                const productDigits = product.replace(/\D/g, ''); // 숫자만 추출
+                const lotDigits = batchLot.replace(/\D/g, ''); // 260115-001 → 260115001 (9자리 고정)
+                const barcodeValue = productDigits + lotDigits;
 
                 // render barcode into svg (DOM 렌더링 후 실행)
                 setTimeout(() => {
@@ -3414,11 +3417,11 @@ function t(key) {
                                 height: 60,
                                 displayValue: true,
                                 fontSize: 14,
-                                margin: 2,
+                                margin: 10, // 여백 증가 (인식률 향상)
                                 marginTop: 5,
                                 marginBottom: 5
                             });
-                            console.log('바코드 생성 성공:', barcodeValue);
+                            console.log('바코드 생성 성공:', barcodeValue, '(제품:', productDigits, 'LOT:', lotDigits + ')');
                         } else {
                             console.error('JsBarcode를 찾을 수 없거나 SVG 요소가 없습니다.', svgEl);
                             if (svgEl) {
@@ -4442,6 +4445,66 @@ function t(key) {
             const n = parseFloat(num);
             if (isNaN(n)) return '';
             return n.toFixed(2);
+        }
+
+        // 바코드 스캔 값 파싱 함수
+        // 입력: "0636260115001" (숫자만)
+        // 출력: { productDigits: "0636", lot: "260115-001", productNumber: "06.36" }
+        function parseBarcodeValue(barcodeValue) {
+            if (!barcodeValue || typeof barcodeValue !== 'string') {
+                return null;
+            }
+
+            // 숫자만 추출
+            const digitsOnly = barcodeValue.replace(/\D/g, '');
+
+            // 최소 길이 확인 (제품번호 최소 2자리 + LOT 9자리 = 11자리)
+            if (digitsOnly.length < 11) {
+                console.warn('바코드 길이 부족:', digitsOnly);
+                return null;
+            }
+
+            // 뒤 9자리 = LOT (고정)
+            const lotDigits = digitsOnly.slice(-9);
+            const lotFormatted = lotDigits.slice(0, 6) + '-' + lotDigits.slice(6); // 260115-001
+
+            // 앞부분 = 제품번호
+            const productDigits = digitsOnly.slice(0, -9);
+
+            // 제품번호 포맷팅 (2자리씩 점으로 구분)
+            // 예: "0636" → "06.36", "1234" → "12.34"
+            let productNumber = '';
+            if (productDigits.length >= 2) {
+                productNumber = productDigits.match(/.{1,2}/g).join('.');
+            } else {
+                productNumber = productDigits;
+            }
+
+            return {
+                productDigits: productDigits,      // "0636"
+                lot: lotFormatted,                 // "260115-001"
+                lotDigits: lotDigits,              // "260115001"
+                productNumber: productNumber       // "06.36"
+            };
+        }
+
+        // 제품번호로 제품명 검색 (DB 조회 필요시 사용)
+        async function findProductByNumber(productNumber) {
+            try {
+                // 제품 목록 조회
+                const response = await fetch(`${API_BASE}/api/blending/products`);
+                const data = await response.json();
+
+                if (data.success && data.products) {
+                    // 제품번호(06.36)를 포함하는 제품명 찾기
+                    const found = data.products.find(p => p.product_name.includes(productNumber));
+                    return found ? found.product_name : null;
+                }
+                return null;
+            } catch (error) {
+                console.error('제품명 검색 실패:', error);
+                return null;
+            }
         }
 
         // 진도(톤 단위) 시각화: 네모칸으로 표현 (정수톤 기준, 소수 단위 미표시)
