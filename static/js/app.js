@@ -3629,7 +3629,7 @@ function t(key) {
                             </td>
                             <td style="text-align: center;">
                                 ${work.status === 'completed' ?
-                                    `<button class="btn" onclick="printBlendingBarcode('${work.product_name}', '${work.batch_lot}')" style="padding: 8px 16px; font-size: 1.2em; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;" title="바코드 출력">
+                                    `<button class="btn" onclick="showBlendingBarcodeFromLog(${work.id})" style="padding: 8px 16px; font-size: 1.2em; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;" title="바코드 출력">
                                         📊
                                     </button>` :
                                     '-'
@@ -3705,138 +3705,94 @@ function t(key) {
             loadAutoInputPage(workId, 'blending');
         }
 
-        function printBlendingBarcode(productName, batchLot) {
-            // 배합 LOT 바코드 출력 모달 표시 (기존 라벨 형태와 동일)
-            const barcodeValue = `PN:${productName}|LOT:${batchLot}`;
-            const company = 'Johnson Electric Operations';
-            const dateStr = new Date().toLocaleString('ko-KR');
+        async function showBlendingBarcodeFromLog(workId) {
+            // 배합작업조회에서 바코드 아이콘 클릭 시 - 기존 라벨 패널 재사용
+            try {
+                // API로 work 데이터 가져오기
+                const response = await fetch(`${API_BASE}/api/blending/work/${workId}`);
+                const data = await response.json();
 
-            // 모달 HTML 생성 (100mm x 100mm 라벨 형태)
-            const modalHtml = `
-                <div id="barcodeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;">
-                    <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="margin: 0;">배합 LOT 바코드</h3>
-                            <button onclick="closeBarcodeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
-                        </div>
-
-                        <div id="barcodeLabel" style="width: 100mm; height: 100mm; box-sizing: border-box; background: white; border: 2px solid #000; display: flex; flex-direction: column; justify-content: space-between; padding: 6px; border-radius: 4px; position: relative;">
-                            <div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between;">
-                                <!-- 상단: 회사명 (왼쪽 상단) 및 날짜(오른쪽 상단) -->
-                                <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-                                    <div style="font-weight:700; font-size:12px; text-align:left;">${company}</div>
-                                    <div style="font-size:11px; color:#222; text-align:right;">작업날짜: ${dateStr}</div>
-                                </div>
-
-                                <!-- 중앙: 분말명 (크게) -->
-                                <div style="display:flex; align-items:center; justify-content:center; width:100%; flex:1;">
-                                    <div style="font-weight:800; font-size:36px; text-align:center; line-height:1;">${productName}</div>
-                                </div>
-
-                                <!-- 하단: 바코드, LOT -->
-                                <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
-                                    <svg id="modalBarcode" style="width:100%; height:72px; display:block;"></svg>
-                                    <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
-                            <button onclick="closeBarcodeModal()" class="btn secondary" style="padding: 10px 20px;">취소</button>
-                            <button onclick="printBarcodeContent()" class="btn" style="padding: 10px 20px; background: #4CAF50; color: white;">🖨️ 인쇄</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // 모달을 body에 추가
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            // 바코드 생성 (기존 라벨과 동일한 설정)
-            setTimeout(() => {
-                const svgEl = document.getElementById('modalBarcode');
-                if (svgEl && typeof JsBarcode === 'function') {
-                    try {
-                        JsBarcode(svgEl, barcodeValue, {
-                            format: 'CODE128',
-                            width: 2,
-                            height: 60,
-                            displayValue: true,
-                            fontSize: 14,
-                            margin: 2,
-                            marginTop: 5,
-                            marginBottom: 5
-                        });
-                    } catch (err) {
-                        console.error('바코드 생성 오류:', err);
-                        svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="10">${barcodeValue}</text>`;
-                    }
-                } else {
-                    console.error('JsBarcode 라이브러리를 찾을 수 없습니다.');
+                if (!data.success || !data.work) {
+                    alert('작업 정보를 불러올 수 없습니다.');
+                    return;
                 }
-            }, 100);
-        }
 
-        function closeBarcodeModal() {
-            const modal = document.getElementById('barcodeModal');
-            if (modal) {
-                modal.remove();
+                const work = data.work;
+
+                // 기존 renderLabelPanel 함수로 라벨 생성
+                renderLabelPanel(work);
+
+                // 라벨 패널을 모달 형태로 표시
+                const panel = document.getElementById('labelPanel');
+                if (panel) {
+                    // 모달 배경 추가
+                    const modalBackdrop = document.createElement('div');
+                    modalBackdrop.id = 'barcodeModalBackdrop';
+                    modalBackdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;';
+
+                    // 닫기 버튼 추가
+                    modalBackdrop.onclick = function(e) {
+                        if (e.target === modalBackdrop) {
+                            closeBarcodeModalFromLog();
+                        }
+                    };
+
+                    // 패널을 모달 안에 넣기
+                    document.body.appendChild(modalBackdrop);
+
+                    // 패널 스타일 조정
+                    panel.style.position = 'fixed';
+                    panel.style.top = '50%';
+                    panel.style.left = '50%';
+                    panel.style.transform = 'translate(-50%, -50%)';
+                    panel.style.zIndex = '10000';
+                    panel.style.maxHeight = '90vh';
+                    panel.style.overflowY = 'auto';
+                    panel.style.display = 'block';
+                    panel.setAttribute('aria-hidden', 'false');
+
+                    // 닫기 버튼이 없으면 추가
+                    if (!panel.querySelector('.modal-close-btn')) {
+                        const closeBtn = document.createElement('button');
+                        closeBtn.className = 'modal-close-btn';
+                        closeBtn.innerHTML = '&times;';
+                        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666; z-index: 10001;';
+                        closeBtn.onclick = closeBarcodeModalFromLog;
+                        panel.insertBefore(closeBtn, panel.firstChild);
+                    }
+                }
+            } catch (error) {
+                console.error('바코드 조회 실패:', error);
+                alert('바코드를 불러오는 중 오류가 발생했습니다: ' + error.message);
             }
         }
 
-        function printBarcodeContent() {
-            // 라벨 인쇄: 라벨 DOM을 복사하여 새 창에서 인쇄 (기존 printLabel과 동일 방식)
-            const labelEl = document.getElementById('barcodeLabel');
-            if (!labelEl) return alert('라벨을 찾을 수 없습니다.');
+        function closeBarcodeModalFromLog() {
+            // 모달 배경 제거
+            const backdrop = document.getElementById('barcodeModalBackdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
 
-            const content = labelEl.innerHTML;
-            const w = window.open('', '_blank');
-            if (!w) return alert('팝업 차단을 확인하세요.');
+            // 패널 원래대로 복원
+            const panel = document.getElementById('labelPanel');
+            if (panel) {
+                panel.style.position = '';
+                panel.style.top = '';
+                panel.style.left = '';
+                panel.style.transform = '';
+                panel.style.zIndex = '';
+                panel.style.maxHeight = '';
+                panel.style.overflowY = '';
+                panel.style.display = 'none';
+                panel.setAttribute('aria-hidden', 'true');
 
-            const html = `
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <title>라벨 인쇄</title>
-                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-                    <style>
-                        body { margin:0; padding:0; }
-                        .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
-                    </style>
-                </head>
-                <body>
-                    <div class="label">${content}</div>
-                    <script>
-                        window.onload = function() {
-                            // 바코드 재렌더링
-                            const svgEl = document.querySelector('svg[id^="modalBarcode"]');
-                            if (svgEl && typeof JsBarcode === 'function') {
-                                // SVG에서 원래 바코드 값 추출 (text 요소에서)
-                                const textEl = svgEl.querySelector('text');
-                                if (textEl && textEl.textContent) {
-                                    const barcodeValue = textEl.textContent;
-                                    JsBarcode(svgEl, barcodeValue, {
-                                        format: 'CODE128',
-                                        width: 2,
-                                        height: 60,
-                                        displayValue: true,
-                                        fontSize: 14,
-                                        margin: 2,
-                                        marginTop: 5,
-                                        marginBottom: 5
-                                    });
-                                }
-                            }
-                            setTimeout(function(){ window.print(); window.close(); }, 500);
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `;
-
-            w.document.open();
-            w.document.write(html);
-            w.document.close();
+                // 닫기 버튼 제거
+                const closeBtn = panel.querySelector('.modal-close-btn');
+                if (closeBtn) {
+                    closeBtn.remove();
+                }
+            }
         }
 
         // ============================================
