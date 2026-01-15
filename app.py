@@ -1551,12 +1551,14 @@ def _do_update_progress(powder_name, lot_number, item_name, conn=None):
 
         # 모든 항목 완료 시 진행중 검사에서 제거
         if len(completed_items) == len(total_items):
+            print(f"[DEBUG] 모든 항목 완료: {powder_name} {lot_number}, completed={completed_items}, total={total_items}")
             cursor.execute('''
                 DELETE FROM inspection_progress
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
 
             update_final_result(powder_name, lot_number, conn)
+            print(f"[DEBUG] update_final_result 호출 완료")
 
         # 연결을 직접 생성한 경우에만 커밋
         if owns_connection:
@@ -1606,6 +1608,8 @@ def update_final_result(powder_name, lot_number, conn=None):
         if spec_row[4]:  # particle_size_type
             required_result_columns.append('particle_size_result')
 
+        print(f"[DEBUG] update_final_result: {powder_name} {lot_number}, required_columns={required_result_columns}")
+
         cursor.execute('''
             SELECT * FROM inspection_result
             WHERE powder_name = ? AND lot_number = ?
@@ -1613,13 +1617,16 @@ def update_final_result(powder_name, lot_number, conn=None):
         result_row = cursor.fetchone()
 
         if not result_row:
+            print(f"[DEBUG] {powder_name} {lot_number}: inspection_result 행 없음")
             return
 
         result_data = dict_from_row(result_row)
 
         # 모든 필수 _result 컬럼이 NULL이 아닌지 확인
         for col in required_result_columns:
-            if result_data.get(col) is None:
+            col_value = result_data.get(col)
+            print(f"[DEBUG] {powder_name} {lot_number}: {col} = {col_value}")
+            if col_value is None:
                 # 하나라도 NULL이면 final_result를 설정하지 않음
                 print(f"[DEBUG] {powder_name} {lot_number}: {col}이 NULL이므로 final_result 설정 안 함")
                 return
@@ -1637,7 +1644,7 @@ def update_final_result(powder_name, lot_number, conn=None):
             WHERE powder_name = ? AND lot_number = ?
         ''', (final_result, powder_name, lot_number))
 
-        print(f"[DEBUG] {powder_name} {lot_number}: 모든 항목 완료, final_result = {final_result}")
+        print(f"[DEBUG] {powder_name} {lot_number}: final_result = {final_result} 설정 완료")
 
         # 연결을 직접 생성한 경우에만 커밋
         if owns_connection:
