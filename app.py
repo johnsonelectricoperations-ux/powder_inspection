@@ -1582,6 +1582,35 @@ def update_final_result(powder_name, lot_number, conn=None):
     try:
         cursor = conn.cursor()
 
+        # 필수 검사 항목 조회 (powder_spec에서)
+        cursor.execute('''
+            SELECT inspection_items, category FROM powder_spec
+            WHERE powder_name = ?
+        ''', (powder_name,))
+        spec_row = cursor.fetchone()
+
+        if not spec_row or not spec_row[0]:
+            return
+
+        inspection_items = json.loads(spec_row[0])
+        category = spec_row[1]
+
+        # 필수 검사 항목의 _result 컬럼명 생성
+        required_result_columns = []
+        for item in inspection_items:
+            item_name = item['name']
+            # 각 항목의 _result 컬럼명 매핑
+            if item_name == 'FlowRate':
+                required_result_columns.append('flow_rate_result')
+            elif item_name == 'ApparentDensity':
+                required_result_columns.append('apparent_density_result')
+            elif item_name == 'Moisture':
+                required_result_columns.append('moisture_result')
+            elif item_name == 'Ash':
+                required_result_columns.append('ash_result')
+            elif item_name == 'ParticleSize':
+                required_result_columns.append('particle_size_result')
+
         cursor.execute('''
             SELECT * FROM inspection_result
             WHERE powder_name = ? AND lot_number = ?
@@ -1593,19 +1622,27 @@ def update_final_result(powder_name, lot_number, conn=None):
 
         result_data = dict_from_row(result_row)
 
-        # 모든 _result 컬럼 확인
+        # 모든 필수 _result 컬럼이 NULL이 아닌지 확인
+        for col in required_result_columns:
+            if result_data.get(col) is None:
+                # 하나라도 NULL이면 final_result를 설정하지 않음
+                print(f"[DEBUG] {powder_name} {lot_number}: {col}이 NULL이므로 final_result 설정 안 함")
+                return
+
+        # 모든 필수 항목이 완료되었을 때만 최종 결과 판정
         final_result = 'PASS'
-        for key, value in result_data.items():
-            if key.endswith('_result') and key != 'final_result':
-                if value == 'FAIL':
-                    final_result = 'FAIL'
-                    break
+        for col in required_result_columns:
+            if result_data.get(col) == 'FAIL':
+                final_result = 'FAIL'
+                break
 
         cursor.execute('''
             UPDATE inspection_result
             SET final_result = ?
             WHERE powder_name = ? AND lot_number = ?
         ''', (final_result, powder_name, lot_number))
+
+        print(f"[DEBUG] {powder_name} {lot_number}: 모든 항목 완료, final_result = {final_result}")
 
         # 연결을 직접 생성한 경우에만 커밋
         if owns_connection:
