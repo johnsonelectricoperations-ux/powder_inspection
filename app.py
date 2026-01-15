@@ -312,19 +312,81 @@ def _do_start_inspection():
             # 이미 저장된 측정값들을 가져오기
             saved_values = {}
             cursor.execute('''
-                SELECT item_name, value1, value2, value3, final_result
-                FROM inspection_result
+                SELECT * FROM inspection_result
                 WHERE powder_name = ? AND lot_number = ?
             ''', (powder_name, lot_number))
 
-            for row in cursor.fetchall():
-                result_row = dict_from_row(row)
-                saved_values[result_row['item_name']] = {
-                    'value1': result_row['value1'],
-                    'value2': result_row['value2'],
-                    'value3': result_row['value3'],
-                    'final_result': result_row['final_result']
+            result_row = cursor.fetchone()
+            if result_row:
+                result_data = dict_from_row(result_row)
+
+                # 컬럼명 매핑 (save_inspection_item 함수와 동일)
+                column_map = {
+                    'FlowRate': ['flow_rate_1', 'flow_rate_2', 'flow_rate_3', 'flow_rate_avg', 'flow_rate_result'],
+                    'ApparentDensity': [
+                        'apparent_density_empty_cup_1', 'apparent_density_powder_weight_1', 'apparent_density_1',
+                        'apparent_density_empty_cup_2', 'apparent_density_powder_weight_2', 'apparent_density_2',
+                        'apparent_density_empty_cup_3', 'apparent_density_powder_weight_3', 'apparent_density_3',
+                        'apparent_density_avg', 'apparent_density_result'
+                    ],
+                    'CContent': ['c_content_1', 'c_content_2', 'c_content_3', 'c_content_avg', 'c_content_result'],
+                    'CuContent': ['cu_content_1', 'cu_content_2', 'cu_content_3', 'cu_content_avg', 'cu_content_result'],
+                    'Moisture': [
+                        'moisture_initial_weight_1', 'moisture_dried_weight_1', 'moisture_1',
+                        'moisture_initial_weight_2', 'moisture_dried_weight_2', 'moisture_2',
+                        'moisture_initial_weight_3', 'moisture_dried_weight_3', 'moisture_3',
+                        'moisture_avg', 'moisture_result'
+                    ],
+                    'Ash': [
+                        'ash_initial_weight_1', 'ash_ash_weight_1', 'ash_1',
+                        'ash_initial_weight_2', 'ash_ash_weight_2', 'ash_2',
+                        'ash_initial_weight_3', 'ash_ash_weight_3', 'ash_3',
+                        'ash_avg', 'ash_result'
+                    ],
+                    'SinterChangeRate': ['sinter_change_rate_1', 'sinter_change_rate_2', 'sinter_change_rate_3', 'sinter_change_rate_avg', 'sinter_change_rate_result'],
+                    'SinterStrength': ['sinter_strength_1', 'sinter_strength_2', 'sinter_strength_3', 'sinter_strength_avg', 'sinter_strength_result'],
+                    'FormingStrength': ['forming_strength_1', 'forming_strength_2', 'forming_strength_3', 'forming_strength_avg', 'forming_strength_result'],
+                    'FormingLoad': ['forming_load_1', 'forming_load_2', 'forming_load_3', 'forming_load_avg', 'forming_load_result']
                 }
+
+                # 각 항목별로 저장된 값 추출
+                for item in items:
+                    item_name = item['name']
+
+                    if item_name == 'ParticleSize':
+                        # 입도분석: particle_180_1, particle_180_2 등
+                        particle_values = {}
+                        mesh_ids = ['180', '150', '106', '75', '45', '45M']
+                        for mesh_id in mesh_ids:
+                            col_1 = f'particle_{mesh_id}_1'
+                            col_2 = f'particle_{mesh_id}_2'
+                            if col_1 in result_data and col_2 in result_data:
+                                particle_values[mesh_id] = {
+                                    'value1': result_data.get(col_1),
+                                    'value2': result_data.get(col_2)
+                                }
+                        if particle_values:
+                            saved_values['ParticleSize'] = {'value1': json.dumps(particle_values)}
+                    elif item_name in column_map:
+                        columns = column_map[item_name]
+                        item_values = {}
+
+                        # 일반 항목: value1, value2, value3 저장
+                        if item_name in ['ApparentDensity', 'Moisture', 'Ash']:
+                            # 중량 기반: 각 측정차수마다 2개 값 (9개 컬럼 중 앞 9개)
+                            for i in range(3):
+                                item_values[f'value{i+1}'] = json.dumps([
+                                    result_data.get(columns[i*3]),
+                                    result_data.get(columns[i*3+1])
+                                ])
+                        else:
+                            # 일반 항목: value1, value2, value3
+                            for i in range(min(3, len(columns)-2)):
+                                if result_data.get(columns[i]) is not None:
+                                    item_values[f'value{i+1}'] = result_data.get(columns[i])
+
+                        item_values['final_result'] = result_data.get(columns[-1])
+                        saved_values[item_name] = item_values
 
             return jsonify({
                 'success': True,

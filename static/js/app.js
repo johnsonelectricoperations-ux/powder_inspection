@@ -371,7 +371,7 @@ function t(key) {
                     let html = `<table><tr><th>${t('powderName')}</th><th>${t('lotNumber')}</th><th>${t('inspectionType')}</th><th>${t('inspector')}</th><th>${t('progress')}</th><th>${t('action')}</th></tr>`;
 
                     incomingInspections.forEach(item => {
-                        const progressPercent = Math.round(item.progress * 100);
+                        const progressPercent = Math.round((item.progress || 0) * 100);
                         const progressBar = `
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="flex: 1; background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden;">
