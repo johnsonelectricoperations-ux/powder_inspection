@@ -165,6 +165,7 @@ function t(key) {
             } else if (pageName === 'incoming') {
                 loadPowderList('incoming');
                 loadInspectorList('incoming');
+                loadIncomingIncompleteInspections();
             } else if (pageName === 'mixing') {
                 // mixing 페이지는 완료된 배합작업 목록만 보여줌
                 loadMixingPage();
@@ -343,11 +344,68 @@ function t(key) {
                 if (data.success) {
                     alert(t('deleteSuccess'));
                     loadIncompleteInspections();  // 목록 새로고침
+                    loadIncomingIncompleteInspections(); // 수입검사 페이지 목록도 새로고침
                 } else {
                     alert(t('deleteError') + ': ' + data.message);
                 }
             } catch (error) {
                 alert(t('deleteError') + ': ' + error.message);
+            }
+        }
+
+        // 수입검사 페이지: 진행 중인 검사 목록 (수입검사만 표시)
+        async function loadIncomingIncompleteInspections() {
+            try {
+                const response = await fetch(`${API_BASE}/api/incomplete-inspections`);
+                const data = await response.json();
+
+                const listDiv = document.getElementById('incomingIncompleteList');
+                if (!listDiv) return;
+
+                // 수입검사만 필터링
+                const incomingInspections = data.success && data.data
+                    ? data.data.filter(item => item.category === 'incoming')
+                    : [];
+
+                if (incomingInspections.length > 0) {
+                    let html = `<table><tr><th>${t('powderName')}</th><th>${t('lotNumber')}</th><th>${t('inspectionType')}</th><th>${t('inspector')}</th><th>${t('progress')}</th><th>${t('action')}</th></tr>`;
+
+                    incomingInspections.forEach(item => {
+                        const progressPercent = Math.round(item.progress * 100);
+                        const progressBar = `
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="flex: 1; background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden;">
+                                    <div style="width: ${progressPercent}%; background: #4CAF50; height: 100%; transition: width 0.3s;"></div>
+                                </div>
+                                <span style="font-size: 12px; font-weight: 600;">${progressPercent}%</span>
+                            </div>
+                        `;
+
+                        html += `
+                            <tr>
+                                <td>${item.powder_name}</td>
+                                <td>${item.lot_number}</td>
+                                <td>${item.inspection_type}</td>
+                                <td>${item.inspector}</td>
+                                <td>${progressBar}</td>
+                                <td>
+                                    <button class="btn" onclick="continueInspection('${item.powder_name}', '${item.lot_number}', '${item.category}')" style="margin-right: 5px;">검사 이어하기</button>
+                                    <button class="btn danger" onclick="deleteIncompleteInspection('${item.powder_name}', '${item.lot_number}')">삭제</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</table>';
+                    listDiv.innerHTML = html;
+                } else {
+                    listDiv.innerHTML = `<div class="empty-message">진행 중인 검사가 없습니다</div>`;
+                }
+            } catch (error) {
+                const listDiv = document.getElementById('incomingIncompleteList');
+                if (listDiv) {
+                    listDiv.innerHTML = `<div class="empty-message">오류: ${error.message}</div>`;
+                }
             }
         }
 
