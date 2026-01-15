@@ -1595,17 +1595,17 @@ def update_final_result(powder_name, lot_number, conn=None):
         if not spec_row:
             return
 
-        # 활성화된 항목의 _result 컬럼명 생성
+        # 활성화된 항목의 _result 컬럼명 생성 (비활성이 아닌 항목만)
         required_result_columns = []
-        if spec_row[0]:  # flow_rate_type
+        if spec_row[0] and spec_row[0] != '비활성':  # flow_rate_type
             required_result_columns.append('flow_rate_result')
-        if spec_row[1]:  # apparent_density_type
+        if spec_row[1] and spec_row[1] != '비활성':  # apparent_density_type
             required_result_columns.append('apparent_density_result')
-        if spec_row[2]:  # moisture_type
+        if spec_row[2] and spec_row[2] != '비활성':  # moisture_type
             required_result_columns.append('moisture_result')
-        if spec_row[3]:  # ash_type
+        if spec_row[3] and spec_row[3] != '비활성':  # ash_type
             required_result_columns.append('ash_result')
-        if spec_row[4]:  # particle_size_type
+        if spec_row[4] and spec_row[4] != '비활성':  # particle_size_type
             required_result_columns.append('particle_size_result')
 
         print(f"[DEBUG] update_final_result: {powder_name} {lot_number}, required_columns={required_result_columns}")
