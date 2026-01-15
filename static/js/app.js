@@ -3447,20 +3447,17 @@ function t(key) {
                 }
 
                 const labelDiv = document.createElement('div');
-                labelDiv.style.width = '100mm';
-                labelDiv.style.height = '100mm';
+                labelDiv.style.width = '150mm';
+                labelDiv.style.height = '108mm';
                 labelDiv.style.boxSizing = 'border-box';
                 labelDiv.style.background = 'white';
                 labelDiv.style.border = '2px solid #000';
                 labelDiv.style.display = 'flex';
                 labelDiv.style.flexDirection = 'column';
                 labelDiv.style.justifyContent = 'space-between';
-                labelDiv.style.padding = '6px';
+                labelDiv.style.padding = '10px';
                 labelDiv.style.borderRadius = '4px';
                 labelDiv.style.position = 'relative';
-
-                // 날짜 (작업 완료시엔 서버의 end_time을 사용하거나 현재 시각 사용)
-                const dateStr = (work.end_time) ? new Date(work.end_time).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR');
 
                 const company = 'Johnson Electric Operations';
                 const product = work.product_name || '';
@@ -3468,23 +3465,25 @@ function t(key) {
 
                 const infoHtml = `
                     <div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between;">
-                        <!-- 상단: 회사명 (왼쪽 상단) 및 날짜(오른쪽 상단) -->
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-                            <div style="font-weight:700; font-size:12px; text-align:left;">${company}</div>
-                            <div style="font-size:11px; color:#222; text-align:right;">작업날짜: ${dateStr}</div>
+                        <!-- 상단: 회사명 -->
+                        <div style="display:flex; justify-content:flex-start; align-items:flex-start; width:100%;">
+                            <div style="font-weight:700; font-size:18px; text-align:left;">${company}</div>
                         </div>
 
-                        <!-- 중앙: 분말명 (크게) -->
+                        <!-- 중앙: 분말명 -->
                         <div style="display:flex; align-items:center; justify-content:center; width:100%; flex:1;">
-                            <div style="font-weight:800; font-size:36px; text-align:center; line-height:1;">${product}</div>
+                            <div style="font-weight:800; font-size:66px; text-align:center; line-height:1;">${product}</div>
                         </div>
 
-                        <!-- 하단: QR코드, LOT, Pack, Weight -->
-                        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
-                            <div id="label-qrcode-${i}" style="display:flex; justify-content:center; align-items:center;"></div>
-                            <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
-                            <div style="font-size:12px; color:#222; font-weight:600;">Pack: ${i}/${totalPacks} • 중량: ${formatNumber(packWeight)} kg</div>
-                            <div style="display:flex; gap:6px; justify-content:center; width:100%;">
+                        <!-- 하단: LOT, QR코드, Pack, Weight -->
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:100%;">
+                            <div style="font-size:28px; color:#000; font-weight:700;">Lot No : ${batchLot}</div>
+                            <div id="label-qrcode-${i}" style="display:flex; justify-content:center; align-items:center; margin:4px 0;"></div>
+                            <div style="font-size:18px; color:#000; font-weight:600; display:flex; gap:40px; justify-content:center; width:100%;">
+                                <span>Net Weight : ${formatNumber(packWeight)}kg</span>
+                                <span>Pack : ${i}/${totalPacks}</span>
+                            </div>
+                            <div style="display:flex; gap:6px; justify-content:center; width:100%; margin-top:4px;">
                                 <button class="btn" onclick="printLabel(${i})">인쇄</button>
                             </div>
                         </div>
@@ -3510,11 +3509,11 @@ function t(key) {
 
                             new QRCode(qrcodeEl, {
                                 text: qrcodeValue,
-                                width: 120,
-                                height: 120,
+                                width: 113,
+                                height: 113,
                                 colorDark: "#000000",
                                 colorLight: "#ffffff",
-                                correctLevel: QRCode.CorrectLevel.H // 높은 오류 정정 레벨
+                                correctLevel: QRCode.CorrectLevel.H // 높은 오류 정정 레벨 (30mm x 30mm)
                             });
                             console.log('QR코드 생성 성공:', qrcodeValue, '(제품:', productDigits, 'LOT:', lotDigits + ')');
                         } else {
@@ -3581,7 +3580,7 @@ function t(key) {
                     <title>라벨 인쇄</title>
                     <style>
                         body { margin:0; padding:0; }
-                        .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
+                        .label { width:150mm; height:108mm; display:flex; align-items:center; justify-content:center; }
                     </style>
                 </head>
                 <body>
