@@ -166,6 +166,18 @@ function t(key) {
                 loadPowderList('incoming');
                 loadInspectorList('incoming');
                 loadIncomingIncompleteInspections();
+
+                // 수입검사 폼 초기화
+                const incomingForm = document.getElementById('incomingForm');
+                if (incomingForm) {
+                    incomingForm.reset();
+                    // 검사일을 오늘 날짜로 재설정
+                    const incomingDateInput = document.getElementById('incomingInspectionDate');
+                    if (incomingDateInput) {
+                        const today = new Date().toISOString().split('T')[0];
+                        incomingDateInput.value = today;
+                    }
+                }
             } else if (pageName === 'mixing') {
                 // mixing 페이지는 완료된 배합작업 목록만 보여줌
                 loadMixingPage();
