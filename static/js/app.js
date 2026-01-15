@@ -945,6 +945,15 @@ function t(key) {
             const pending = pendingResults[itemName];
             if (!pending) return alert('먼저 판정(검증)을 수행하세요.');
 
+            // 배합검사의 경우 검사자 선택 필수
+            if (currentInspection.category === 'mixing') {
+                const inspectorSelect = document.getElementById('infoInspector');
+                if (!inspectorSelect || !inspectorSelect.value) {
+                    alert('검사자를 선택해주세요.');
+                    return;
+                }
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/save-item`, {
                     method: 'POST',
@@ -1144,6 +1153,15 @@ function t(key) {
             if (!pending) return alert('먼저 판정(검증)을 수행하세요.');
 
             if (pending.result !== 'PASS') return alert('모든 항목이 합격일 때만 최종저장할 수 있습니다.');
+
+            // 배합검사의 경우 검사자 선택 필수
+            if (currentInspection.category === 'mixing') {
+                const inspectorSelect = document.getElementById('infoInspector');
+                if (!inspectorSelect || !inspectorSelect.value) {
+                    alert('검사자를 선택해주세요.');
+                    return;
+                }
+            }
 
             try {
                 const response = await fetch(`${API_BASE}/api/save-particle-size`, {
