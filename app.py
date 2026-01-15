@@ -1582,34 +1582,29 @@ def update_final_result(powder_name, lot_number, conn=None):
     try:
         cursor = conn.cursor()
 
-        # 필수 검사 항목 조회 (powder_spec에서)
+        # powder_spec에서 활성화된 검사 항목 확인
         cursor.execute('''
-            SELECT inspection_items, category FROM powder_spec
+            SELECT flow_rate_type, apparent_density_type, moisture_type, ash_type, particle_size_type, category
+            FROM powder_spec
             WHERE powder_name = ?
         ''', (powder_name,))
         spec_row = cursor.fetchone()
 
-        if not spec_row or not spec_row[0]:
+        if not spec_row:
             return
 
-        inspection_items = json.loads(spec_row[0])
-        category = spec_row[1]
-
-        # 필수 검사 항목의 _result 컬럼명 생성
+        # 활성화된 항목의 _result 컬럼명 생성
         required_result_columns = []
-        for item in inspection_items:
-            item_name = item['name']
-            # 각 항목의 _result 컬럼명 매핑
-            if item_name == 'FlowRate':
-                required_result_columns.append('flow_rate_result')
-            elif item_name == 'ApparentDensity':
-                required_result_columns.append('apparent_density_result')
-            elif item_name == 'Moisture':
-                required_result_columns.append('moisture_result')
-            elif item_name == 'Ash':
-                required_result_columns.append('ash_result')
-            elif item_name == 'ParticleSize':
-                required_result_columns.append('particle_size_result')
+        if spec_row[0]:  # flow_rate_type
+            required_result_columns.append('flow_rate_result')
+        if spec_row[1]:  # apparent_density_type
+            required_result_columns.append('apparent_density_result')
+        if spec_row[2]:  # moisture_type
+            required_result_columns.append('moisture_result')
+        if spec_row[3]:  # ash_type
+            required_result_columns.append('ash_result')
+        if spec_row[4]:  # particle_size_type
+            required_result_columns.append('particle_size_result')
 
         cursor.execute('''
             SELECT * FROM inspection_result
