@@ -2800,7 +2800,8 @@ def get_blending_works():
                 ''', (work_dict['batch_lot'],))
 
                 inspection_row = cursor.fetchone()
-                if inspection_row:
+                # final_result가 NULL이 아닐 때만 검사 완료로 판단
+                if inspection_row and inspection_row[0] is not None:
                     work_dict['inspection_status'] = 'completed'
                     work_dict['inspection_result'] = inspection_row[0]
                 else:
