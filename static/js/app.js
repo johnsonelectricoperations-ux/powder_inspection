@@ -189,6 +189,14 @@ function t(key) {
                 loadPowderListForSearch();
             } else if (pageName === 'blending-log') {
                 loadMixingPowderListForFilter();
+
+                // 작업완료일 초기값 설정 (오늘 날짜)
+                const today = new Date().toISOString().split('T')[0];
+                const dateFromEl = document.getElementById('filterCompletedDateFrom');
+                const dateToEl = document.getElementById('filterCompletedDateTo');
+                if (dateFromEl && !dateFromEl.value) dateFromEl.value = today;
+                if (dateToEl && !dateToEl.value) dateToEl.value = today;
+
                 loadBlendingWorks();
             } else if (pageName === 'blending-orders') {
                 loadBlendingOrdersPage();
@@ -3040,9 +3048,17 @@ function t(key) {
                     return;
                 }
 
+                // 검사 완료된 작업 필터링 (검사 미완료 또는 진행 중만 표시)
+                const unfinishedWorks = data.works.filter(work => work.inspection_status !== 'completed');
+
+                if (unfinishedWorks.length === 0) {
+                    container.innerHTML = '<div class="empty-message">검사 대기 중인 배합작업이 없습니다.</div>';
+                    return;
+                }
+
                 let html = '<table class="data-table" style="width:100%"><thead><tr><th>작업지시번호</th><th>제품명</th><th>배합 LOT</th><th>작업자</th><th>완료시간</th><th>작업</th></tr></thead><tbody>';
 
-                data.works.forEach(work => {
+                unfinishedWorks.forEach(work => {
                     const endTime = work.end_time ? new Date(work.end_time).toLocaleString('ko-KR') : '-';
 
                     // 검사 상태에 따라 버튼/아이콘 표시
