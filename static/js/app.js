@@ -380,10 +380,14 @@ function t(key) {
                     : [];
 
                 if (incomingInspections.length > 0) {
-                    let html = `<table><tr><th>${t('powderName')}</th><th>${t('lotNumber')}</th><th>${t('inspectionType')}</th><th>${t('inspector')}</th><th>${t('progress')}</th><th>${t('action')}</th></tr>`;
+                    let html = `<table><tr><th>검사일</th><th>${t('powderName')}</th><th>${t('lotNumber')}</th><th>${t('inspectionType')}</th><th>${t('inspector')}</th><th>${t('progress')}</th><th>${t('action')}</th></tr>`;
 
                     incomingInspections.forEach(item => {
-                        const progressPercent = Math.round((item.progress || 0) * 100);
+                        // 진행률 계산: completedItems와 totalItems 배열 사용
+                        const completedCount = (item.completedItems && item.completedItems.length) || 0;
+                        const totalCount = (item.totalItems && item.totalItems.length) || 0;
+                        const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
                         const progressBar = `
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="flex: 1; background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden;">
@@ -393,8 +397,12 @@ function t(key) {
                             </div>
                         `;
 
+                        // 검사일 포맷
+                        const inspectionDate = item.inspection_date || '-';
+
                         html += `
                             <tr>
+                                <td>${inspectionDate}</td>
                                 <td>${item.powder_name}</td>
                                 <td>${item.lot_number}</td>
                                 <td>${item.inspection_type}</td>
