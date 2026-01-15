@@ -2976,6 +2976,9 @@ def trace_by_material_lot(material_lot):
 
             inspection = dict_from_row(inspection_row)
 
+            # inspection에서 powder_name 가져오기 (빈 문자열인 경우 대비)
+            actual_powder_name = inspection['powder_name']
+
             # 2. 이 LOT과 분말명이 사용된 모든 배합 작업 조회
             cursor.execute('''
                 SELECT
@@ -2993,9 +2996,14 @@ def trace_by_material_lot(material_lot):
                 JOIN blending_work bw ON mi.blending_work_id = bw.id
                 WHERE mi.material_lot = ? AND mi.powder_name = ?
                 ORDER BY bw.start_time DESC
-            ''', (material_lot, powder_name))
+            ''', (material_lot, actual_powder_name))
 
             usages = [dict_from_row(row) for row in cursor.fetchall()]
+
+            # 시간 필드 KST 변환
+            convert_times_in_dict(inspection)
+            for usage in usages:
+                convert_times_in_dict(usage)
 
             return jsonify({
                 'success': True,
