@@ -1210,8 +1210,8 @@ function t(key) {
                     const response = await fetch(`${API_BASE}/api/blending/products`);
                     const data = await response.json();
 
-                    if (data.success && data.products) {
-                        data.products.forEach(product => {
+                    if (data.success && data.data) {
+                        data.data.forEach(product => {
                             const option = document.createElement('option');
                             option.value = product.product_name;
                             option.textContent = product.product_name;
@@ -1244,11 +1244,11 @@ function t(key) {
                     const productResponse = await fetch(`${API_BASE}/api/blending/products`);
                     const productData = await productResponse.json();
 
-                    if (productData.success && productData.products) {
+                    if (productData.success && productData.data) {
                         const blendingGroup = document.createElement('optgroup');
                         blendingGroup.label = '배합분말';
 
-                        productData.products.forEach(product => {
+                        productData.data.forEach(product => {
                             const option = document.createElement('option');
                             option.value = product.product_name;
                             option.textContent = product.product_name;
