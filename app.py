@@ -2800,8 +2800,13 @@ def get_blending_works():
                 ''', (work_dict['batch_lot'],))
 
                 inspection_row = cursor.fetchone()
+
+                # 디버깅: 상태 확인
+                print(f"[DEBUG] LOT: {work_dict['batch_lot']}, inspection_row: {inspection_row}")
+
                 # final_result가 NULL이 아닐 때만 검사 완료로 판단
                 if inspection_row and inspection_row[0] is not None:
+                    print(f"[DEBUG] LOT: {work_dict['batch_lot']} - 검사 완료 (final_result={inspection_row[0]})")
                     work_dict['inspection_status'] = 'completed'
                     work_dict['inspection_result'] = inspection_row[0]
                 else:
@@ -2813,12 +2818,17 @@ def get_blending_works():
                         LIMIT 1
                     ''', (work_dict['batch_lot'],))
 
-                    if cursor.fetchone():
+                    progress_exists = cursor.fetchone()
+                    print(f"[DEBUG] LOT: {work_dict['batch_lot']} - inspection_progress 존재: {progress_exists is not None}")
+
+                    if progress_exists:
                         work_dict['inspection_status'] = 'in_progress'
                         work_dict['inspection_result'] = None
                     else:
                         work_dict['inspection_status'] = None
                         work_dict['inspection_result'] = None
+
+                    print(f"[DEBUG] LOT: {work_dict['batch_lot']} - 최종 상태: {work_dict['inspection_status']}")
 
                 works.append(work_dict)
 
