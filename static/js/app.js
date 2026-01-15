@@ -3479,9 +3479,9 @@ function t(key) {
                             <div style="font-weight:800; font-size:36px; text-align:center; line-height:1;">${product}</div>
                         </div>
 
-                        <!-- 하단: 바코드, LOT, Pack, Weight -->
+                        <!-- 하단: QR코드, LOT, Pack, Weight -->
                         <div style="display:flex; flex-direction:column; align-items:center; gap:6px; width:100%;">
-                            <svg id="label-barcode-${i}" style="width:100%; height:72px; display:block;"></svg>
+                            <div id="label-qrcode-${i}" style="display:flex; justify-content:center; align-items:center;"></div>
                             <div style="font-size:24px; color:#222; font-weight:700;">LOT: ${batchLot}</div>
                             <div style="font-size:12px; color:#222; font-weight:600;">Pack: ${i}/${totalPacks} • 중량: ${formatNumber(packWeight)} kg</div>
                             <div style="display:flex; gap:6px; justify-content:center; width:100%;">
@@ -3494,36 +3494,37 @@ function t(key) {
                 labelDiv.innerHTML = infoHtml;
                 list.appendChild(labelDiv);
 
-                // 바코드 생성: 숫자만 사용 (제품명 숫자 + LOT 숫자)
+                // QR코드 생성: 숫자만 사용 (제품명 숫자 + LOT 숫자)
                 // 예: JEO.06.36 + 260115-001 → 0636260115001
                 const productDigits = product.replace(/\D/g, ''); // 숫자만 추출
                 const lotDigits = batchLot.replace(/\D/g, ''); // 260115-001 → 260115001 (9자리 고정)
-                const barcodeValue = productDigits + lotDigits;
+                const qrcodeValue = productDigits + lotDigits;
 
-                // render barcode into svg (DOM 렌더링 후 실행)
+                // render QR code into div (DOM 렌더링 후 실행)
                 setTimeout(() => {
                     try {
-                        const svgEl = document.getElementById(`label-barcode-${i}`);
-                        if (svgEl && typeof JsBarcode === 'function') {
-                            JsBarcode(svgEl, barcodeValue, {
-                                format: 'CODE128',
-                                width: 2,
-                                height: 60,
-                                displayValue: true,
-                                fontSize: 14,
-                                margin: 10, // 여백 증가 (인식률 향상)
-                                marginTop: 5,
-                                marginBottom: 5
+                        const qrcodeEl = document.getElementById(`label-qrcode-${i}`);
+                        if (qrcodeEl && typeof QRCode === 'function') {
+                            // 기존 내용 초기화
+                            qrcodeEl.innerHTML = '';
+
+                            new QRCode(qrcodeEl, {
+                                text: qrcodeValue,
+                                width: 120,
+                                height: 120,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.H // 높은 오류 정정 레벨
                             });
-                            console.log('바코드 생성 성공:', barcodeValue, '(제품:', productDigits, 'LOT:', lotDigits + ')');
+                            console.log('QR코드 생성 성공:', qrcodeValue, '(제품:', productDigits, 'LOT:', lotDigits + ')');
                         } else {
-                            console.error('JsBarcode를 찾을 수 없거나 SVG 요소가 없습니다.', svgEl);
-                            if (svgEl) {
-                                svgEl.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="10">${barcodeValue}</text>`;
+                            console.error('QRCode를 찾을 수 없거나 div 요소가 없습니다.', qrcodeEl);
+                            if (qrcodeEl) {
+                                qrcodeEl.innerHTML = `<div style="font-size:10px; text-align:center;">${qrcodeValue}</div>`;
                             }
                         }
                     } catch (err) {
-                        console.error('바코드 렌더링 오류:', err);
+                        console.error('QR코드 렌더링 오류:', err);
                     }
                 }, 100);
             }
@@ -3564,9 +3565,10 @@ function t(key) {
             const labelEl = list && list.children && list.children[index - 1];
             if (!labelEl) return alert('라벨을 찾을 수 없습니다.');
 
-            // 바코드 SVG 요소와 데이터 가져오기
-            const barcodeSvg = labelEl.querySelector('svg[id^="label-barcode-"]');
-            const barcodeId = barcodeSvg ? barcodeSvg.id : null;
+            // QR코드 div 요소에서 데이터 가져오기
+            const qrcodeDiv = labelEl.querySelector('div[id^="label-qrcode-"]');
+            const qrcodeImg = qrcodeDiv ? qrcodeDiv.querySelector('img') : null;
+            const qrcodeDataUrl = qrcodeImg ? qrcodeImg.src : null;
 
             const content = labelEl.innerHTML;
             const w = window.open('', '_blank');
@@ -3577,7 +3579,6 @@ function t(key) {
                 <head>
                     <meta charset="utf-8">
                     <title>라벨 인쇄</title>
-                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <style>
                         body { margin:0; padding:0; }
                         .label { width:100mm; height:100mm; display:flex; align-items:center; justify-content:center; }
@@ -3587,23 +3588,7 @@ function t(key) {
                     <div class="label">${content}</div>
                     <script>
                         window.onload = function() {
-                            // 바코드 재렌더링
-                            const svgEl = document.querySelector('svg[id^="label-barcode-"]');
-                            if (svgEl && typeof JsBarcode === 'function') {
-                                // SVG에서 원래 바코드 값 추출 (text 요소에서)
-                                const textEl = svgEl.querySelector('text');
-                                if (textEl && textEl.textContent) {
-                                    const barcodeValue = textEl.textContent;
-                                    JsBarcode(svgEl, barcodeValue, {
-                                        format: 'CODE128',
-                                        width: 2,
-                                        height: 72,
-                                        displayValue: true,
-                                        fontSize: 12,
-                                        margin: 0
-                                    });
-                                }
-                            }
+                            // QR코드는 이미 img로 렌더링되어 있으므로 추가 작업 불필요
                             setTimeout(function(){ window.print(); window.close(); }, 500);
                         };
                     <\/script>
