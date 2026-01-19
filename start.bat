@@ -1,63 +1,40 @@
 @echo off
-chcp 65001 >nul
-title 분말 검사 시스템 서버
+REM 분말검사 시스템 시작 스크립트 (Windows)
 
-echo ================================================
-echo 분말 검사 시스템 서버 시작
-echo ================================================
+echo ======================================
+echo   분말검사 시스템 서버 시작
+echo ======================================
 echo.
 
-REM 현재 디렉토리로 이동
-cd /d "%~dp0"
-
-REM Python 설치 확인
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo [오류] Python이 설치되어 있지 않습니다!
-    echo.
-    echo Python 설치 방법:
-    echo 1. https://www.python.org/downloads/ 에서 Python 다운로드
-    echo 2. 설치 시 "Add Python to PATH" 체크
+REM 가상환경 확인
+if not exist "venv\Scripts\activate.bat" (
+    echo [오류] 가상환경이 설정되지 않았습니다.
+    echo 다음 명령어를 먼저 실행하세요:
+    echo   python -m venv venv
+    echo   venv\Scripts\activate
+    echo   pip install -r requirements.txt
     echo.
     pause
     exit /b 1
 )
 
-echo Python 버전:
-python --version
-echo.
-
-REM 필요한 라이브러리 확인
-echo 라이브러리 확인 중...
-python -c "import flask" >nul 2>&1
-if errorlevel 1 (
-    echo [경고] Flask가 설치되어 있지 않습니다. 설치를 시작합니다...
-    pip install Flask Flask-CORS
-    echo.
-)
-
-REM 데이터베이스 파일 확인
-if not exist "database.db" (
-    echo [경고] 데이터베이스가 없습니다. 초기화를 시작합니다...
-    python init_db.py
-    echo.
-)
-
-echo 서버를 시작합니다...
-echo.
-echo ================================================
-echo 접속 방법:
-echo - 이 PC에서: http://localhost:5000
-echo - 다른 PC에서: http://[이 PC의 IP]:5000
-echo.
-echo 서버 종료: Ctrl+C 또는 이 창 닫기
-echo ================================================
-echo.
+REM 가상환경 활성화
+echo [1/2] 가상환경 활성화 중...
+call venv\Scripts\activate.bat
 
 REM 서버 실행
+echo [2/2] 서버 시작 중...
+echo.
+echo 서버가 시작되었습니다!
+echo 웹 브라우저에서 http://localhost:5000 으로 접속하세요.
+echo.
+echo 서버를 종료하려면 Ctrl+C를 누르세요.
+echo ======================================
+echo.
+
 python app.py
 
-REM 서버 종료 시
+REM 서버 종료 후
 echo.
 echo 서버가 종료되었습니다.
 pause
