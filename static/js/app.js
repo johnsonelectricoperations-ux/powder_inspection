@@ -5619,6 +5619,13 @@ function t(key) {
                                oninput="resetLotValidation(${materialIndex}, ${lotIndex})"
                                onblur="validateAutoInputLot(${materialIndex}, ${lotIndex}, '${powderName}')"
                                onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+                        <label style="display: flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 0.85em; cursor: pointer;">
+                            <input type="checkbox"
+                                   id="manualInput_${materialIndex}_${lotIndex}"
+                                   style="cursor: pointer;"
+                                   title="체크하면 자동 판정이 비활성화되고 수동으로 입력할 수 있습니다">
+                            <span style="color: #666;">수동</span>
+                        </label>
                         <div id="lotValidation_${materialIndex}_${lotIndex}" style="min-width: 60px; font-weight: 600; font-size: 0.9em;"></div>
                     </div>
                 </td>
@@ -6170,6 +6177,15 @@ function t(key) {
                 );
 
                 if (isLotInput && input.value.length > 0) {
+                    // 수동 체크박스 확인 (lotInput_X_Y → manualInput_X_Y)
+                    const manualCheckboxId = input.id.replace('lotInput', 'manualInput');
+                    const manualCheckbox = document.getElementById(manualCheckboxId);
+
+                    // 수동 체크박스가 체크되어 있으면 자동 판정 건너뛰기
+                    if (manualCheckbox && manualCheckbox.checked) {
+                        return;
+                    }
+
                     // 기존 타이머 취소
                     if (barcodeInputTimers[input.id]) {
                         clearTimeout(barcodeInputTimers[input.id]);
