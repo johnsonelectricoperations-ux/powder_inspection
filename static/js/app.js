@@ -6153,6 +6153,41 @@ function t(key) {
         };
 
         // ============================================
+        // 바코드 스캔 자동 감지 및 처리
+        // ============================================
+        let barcodeInputTimers = {}; // 각 입력란별 타이머 저장
+
+        document.addEventListener('input', function(event) {
+            // LOT 입력란에서만 작동
+            if (event.target.tagName === 'INPUT' && event.target.type === 'text') {
+                const input = event.target;
+
+                // LOT 입력란 확인
+                const isLotInput = input.id && (
+                    input.id.includes('lotInput') ||
+                    input.classList.contains('lot-input') ||
+                    input.placeholder.includes('스캔')
+                );
+
+                if (isLotInput && input.value.length > 0) {
+                    // 기존 타이머 취소
+                    if (barcodeInputTimers[input.id]) {
+                        clearTimeout(barcodeInputTimers[input.id]);
+                    }
+
+                    // 200ms 후 자동으로 blur 트리거 (바코드 입력 완료로 판단)
+                    barcodeInputTimers[input.id] = setTimeout(() => {
+                        if (document.activeElement === input) {
+                            // 현재 포커스가 이 입력란에 있으면 blur 트리거
+                            input.blur();
+                        }
+                        delete barcodeInputTimers[input.id];
+                    }, 200); // 200ms 대기
+                }
+            }
+        });
+
+        // ============================================
         // 전역 Enter 키 이벤트 리스너 (바코드 스캐너 지원)
         // ============================================
         document.addEventListener('keydown', function(event) {
