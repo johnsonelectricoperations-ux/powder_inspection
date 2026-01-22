@@ -5617,7 +5617,8 @@ function t(key) {
                                placeholder="스캔 또는 수동입력"
                                style="flex: 1; padding: 8px;"
                                oninput="resetLotValidation(${materialIndex}, ${lotIndex})"
-                               onblur="validateAutoInputLot(${materialIndex}, ${lotIndex}, '${powderName}')">
+                               onblur="validateAutoInputLot(${materialIndex}, ${lotIndex}, '${powderName}')"
+                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
                         <div id="lotValidation_${materialIndex}_${lotIndex}" style="min-width: 60px; font-weight: 600; font-size: 0.9em;"></div>
                     </div>
                 </td>
@@ -6150,3 +6151,59 @@ function t(key) {
         window.onload = () => {
             loadDashboard();
         };
+
+        // ============================================
+        // 전역 Enter 키 이벤트 리스너 (바코드 스캐너 지원)
+        // ============================================
+        document.addEventListener('keydown', function(event) {
+            // Enter 키를 눌렀을 때
+            if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+                const input = event.target;
+
+                // form 내부의 submit 버튼이 있는 경우는 기본 동작 유지
+                const form = input.closest('form');
+                if (form) {
+                    // form의 경우 자동 submit 되도록 기본 동작 유지
+                    return;
+                }
+
+                // 일반 input의 경우 blur 이벤트 트리거
+                event.preventDefault();
+                input.blur();
+
+                // blur 후 다음 입력란으로 포커스 이동 (선택사항)
+                const allInputs = Array.from(document.querySelectorAll('input:not([disabled]):not([readonly])'));
+                const currentIndex = allInputs.indexOf(input);
+                if (currentIndex >= 0 && currentIndex < allInputs.length - 1) {
+                    // 다음 입력란으로 포커스
+                    setTimeout(() => {
+                        allInputs[currentIndex + 1].focus();
+                    }, 100);
+                }
+            }
+        });
+
+        // ============================================
+        // 바코드 스캔을 위한 자동 영문 모드 전환 (한글 입력 방지)
+        // ============================================
+        document.addEventListener('focus', function(event) {
+            // LOT 번호나 바코드 입력란에 포커스될 때
+            if (event.target.tagName === 'INPUT' && event.target.type === 'text') {
+                const input = event.target;
+
+                // LOT 입력란이거나 바코드 관련 입력란일 경우
+                if (input.id && (
+                    input.id.includes('lot') ||
+                    input.id.includes('Lot') ||
+                    input.id.includes('LOT') ||
+                    input.classList.contains('lot-input') ||
+                    input.placeholder.includes('LOT') ||
+                    input.placeholder.includes('스캔')
+                )) {
+                    // IME 모드를 비활성화 (영문 모드로 전환)
+                    input.style.imeMode = 'disabled';
+                    input.style.webkitImeMode = 'disabled';
+                    input.setAttribute('lang', 'en');
+                }
+            }
+        }, true);
